@@ -1,54 +1,44 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Docente - CECOVAM</title>
-    <style>
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: #f0f2f5; text-align: center; }
-        .navbar { background-color: #b21f1f; padding: 15px; color: white; }
-        .navbar a { color: white; text-decoration: none; font-weight: bold; margin: 0 15px; }
-        .container { padding: 30px; max-width: 900px; margin: auto; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 25px; }
-        h2 { color: #b21f1f; }
-        input, button { padding: 10px; margin: 10px; border-radius: 5px; border: 1px solid #ccc; }
-        .btn-docente { background-color: #1a2a6c; color: white; border: none; cursor: pointer; font-weight: bold; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        th { background-color: #b21f1f; color: white; }
-    </style>
-</head>
-<body>
+<body onload="verificarAcceso()">
 
-    <div class="navbar">
-        <a href="index.html">INICIO</a>
-        <span>PANEL DE CONTROL DOCENTE</span>
+    <div id="bloqueo" style="display:none; padding: 100px 20px;">
+        <h2>🔐 Acceso Restringido a Docentes</h2>
+        <p>Por favor, ingresa la clave de acceso para continuar:</p>
+        <input type="password" id="passDocente" placeholder="Contraseña de Docente">
+        <button onclick="validarClave()" style="background:#b21f1f; color:white; padding:10px 20px; border:none; border-radius:5px; cursor:pointer;">Entrar</button>
+        <br><br>
+        <a href="index.html">Volver al inicio</a>
     </div>
 
-    <div class="container">
-        <div class="card">
-            <h2>1. Publicar Tarea o Material</h2>
-            <input type="text" id="tituloTarea" placeholder="Título (ej. Guía de Examen)">
-            <input type="file" id="archivoTarea">
-            <button class="btn-docente" onclick="subirTarea()">PUBLICAR PARA ALUMNOS</button>
-            <p id="estadoSubida"></p>
+    <div id="contenidoDocente" style="display:none;">
+        <div class="navbar">
+            <a href="index.html">INICIO</a>
+            <span>PANEL DE CONTROL DOCENTE</span>
+            <button onclick="cerrarSesion()" style="margin-left:20px; background:white; color:#b21f1f; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">Cerrar Sesión</button>
         </div>
 
-        <div class="card">
-            <h2>2. Revisar Trabajos Recibidos</h2>
-            <p>Aquí aparecen los archivos que los alumnos han enviado.</p>
-            <table id="tablaEntregas">
-                <thead>
-                    <tr>
-                        <th>Alumno</th>
-                        <th>Materia</th>
-                        <th>Fecha</th>
-                        <th>Archivo</th>
-                    </tr>
-                </thead>
-                <tbody id="cuerpoTabla">
-                    </tbody>
-            </table>
+        <div class="container">
+            <div class="card">
+                <h2>1. Publicar Tarea o Material</h2>
+                <input type="text" id="tituloTarea" placeholder="Título (ej. Guía de Examen)">
+                <input type="file" id="archivoTarea">
+                <button class="btn-docente" onclick="subirTarea()">PUBLICAR PARA ALUMNOS</button>
+                <p id="estadoSubida"></p>
+            </div>
+
+            <div class="card">
+                <h2>2. Revisar Trabajos Recibidos</h2>
+                <table id="tablaEntregas">
+                    <thead>
+                        <tr>
+                            <th>Alumno</th>
+                            <th>Materia</th>
+                            <th>Fecha</th>
+                            <th>Archivo</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cuerpoTabla"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -69,54 +59,60 @@
         const storage = getStorage(app);
         const db = getFirestore(app);
 
-        // FUNCIÓN PARA QUE EL DOCENTE SUBA MATERIAL
+        // --- SEGURIDAD ---
+        window.verificarAcceso = () => {
+            if (sessionStorage.getItem("docenteLogueado") === "true") {
+                document.getElementById("contenidoDocente").style.display = "block";
+                cargarEntregasAlumnos();
+            } else {
+                document.getElementById("bloqueo").style.display = "block";
+            }
+        }
+
+        window.validarClave = () => {
+            const clave = document.getElementById("passDocente").value;
+            if (clave === "cecovam2024") { // <--- PUEDES CAMBIAR ESTA CLAVE
+                sessionStorage.setItem("docenteLogueado", "true");
+                location.reload();
+            } else {
+                alert("Clave incorrecta");
+            }
+        }
+
+        window.cerrarSesion = () => {
+            sessionStorage.removeItem("docenteLogueado");
+            location.reload();
+        }
+
+        // --- FUNCIONES DE CARGA Y SUBIDA ---
         window.subirTarea = async () => {
             const file = document.getElementById('archivoTarea').files[0];
             const titulo = document.getElementById('tituloTarea').value;
             const estado = document.getElementById('estadoSubida');
 
             if(!file || !titulo) return alert("Pon un título y selecciona un archivo");
-
             estado.innerText = "Subiendo archivo...";
             
             try {
                 const storageRef = ref(storage, 'tareas/' + Date.now() + "_" + file.name);
                 await uploadBytes(storageRef, file);
                 const url = await getDownloadURL(storageRef);
-
-                await addDoc(collection(db, "tareas"), {
-                    titulo: titulo,
-                    archivoUrl: url,
-                    fecha: new Date()
-                });
-
-                estado.innerText = "✅ ¡Material publicado con éxito!";
+                await addDoc(collection(db, "tareas"), { titulo, archivoUrl: url, fecha: new Date() });
+                estado.innerText = "✅ ¡Publicado!";
                 document.getElementById('tituloTarea').value = "";
-            } catch (error) {
-                estado.innerText = "❌ Error al subir.";
-            }
+            } catch (error) { estado.innerText = "❌ Error."; }
         }
 
-        // FUNCIÓN PARA VER LO QUE LOS ALUMNOS ENTREGARON
         const cargarEntregasAlumnos = async () => {
             const q = query(collection(db, "entregas"), orderBy("fecha", "desc"));
             const querySnapshot = await getDocs(q);
             const tabla = document.getElementById('cuerpoTabla');
             tabla.innerHTML = "";
-
             querySnapshot.forEach((doc) => {
                 const e = doc.data();
                 const fecha = e.fecha.toDate().toLocaleDateString();
-                tabla.innerHTML += `
-                    <tr>
-                        <td>${e.alumno}</td>
-                        <td>${e.materia}</td>
-                        <td>${fecha}</td>
-                        <td><a href="${e.archivoUrl}" target="_blank" style="color:#1a2a6c; font-weight:bold;">Ver Trabajo</a></td>
-                    </tr>`;
+                tabla.innerHTML += <tr><td>${e.alumno}</td><td>${e.materia}</td><td>${fecha}</td><td><a href="${e.archivoUrl}" target="_blank">Ver</a></td></tr>;
             });
         }
-        cargarEntregasAlumnos();
     </script>
 </body>
-</html>
