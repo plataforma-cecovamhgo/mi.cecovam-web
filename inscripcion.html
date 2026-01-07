@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Registro - CECOVAM</title>
+</head>
+<body>
+    <h2>Registro de Alumnos CECOVAM</h2>
+    <form id="registroForm">
+        <input type="text" id="nombre" placeholder="Nombre completo" required><br><br>
+        <input type="email" id="correo" placeholder="Correo electrónico" required><br><br>
+        <input type="password" id="pass" placeholder="Contraseña (mínimo 6 caracteres)" required><br><br>
+        <button type="submit">Registrarme</button>
+    </form>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDJh57e-sBDK0_8VtFn4EwFOyDDsm8v0lc",
+            authDomain: "plataforma-cecovam.firebaseapp.com",
+            projectId: "plataforma-cecovam",
+            storageBucket: "plataforma-cecovam.firebasestorage.app",
+            messagingSenderId: "655865798424",
+            appId: "1:655865798424:web:625f828d553385e43d24d9",
+            measurementId: "G-H8HXLDKOBJ"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        document.getElementById('registroForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('correo').value;
+            const password = document.getElementById('pass').value;
+
+            createUserWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    alert("¡Alumno registrado con éxito!");
+                    window.location.href = "login.html";
+                })
+                .catch((error) => {
+                    alert("Error: " + error.message);
+                });
+        });
+    </script>
+</body>
+</html>
