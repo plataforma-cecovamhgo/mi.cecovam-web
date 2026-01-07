@@ -2,48 +2,42 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Registro - CECOVAM</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plataforma CECOVAM</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: #f0f2f5; text-align: center; }
+        .navbar { background-color: #1a2a6c; padding: 15px; color: white; display: flex; justify-content: center; gap: 20px; }
+        .navbar a { color: white; text-decoration: none; font-weight: bold; padding: 10px 20px; border-radius: 5px; transition: 0.3s; }
+        .navbar a:hover { background-color: #b21f1f; }
+        .hero { padding: 80px 20px; background: linear-gradient(to right, #1a2a6c, #b21f1f, #fdbb2d); color: white; }
+        .container { padding: 40px; }
+        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); display: inline-block; max-width: 500px; }
+        h1 { margin-bottom: 10px; }
+        .btn-principal { display: block; background-color: #1a2a6c; color: white; padding: 15px; margin: 10px 0; text-decoration: none; border-radius: 8px; font-size: 1.1em; }
+    </style>
 </head>
 <body>
-    <h2>Registro de Alumnos CECOVAM</h2>
-    <form id="registroForm">
-        <input type="text" id="nombre" placeholder="Nombre completo" required><br><br>
-        <input type="email" id="correo" placeholder="Correo electrónico" required><br><br>
-        <input type="password" id="pass" placeholder="Contraseña (mínimo 6 caracteres)" required><br><br>
-        <button type="submit">Registrarme</button>
-    </form>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+    <div class="navbar">
+        <a href="index.html">INICIO</a>
+        <a href="alumnos.html">ALUMNOS</a>
+        <a href="docentes.html">DOCENTES</a>
+        <a href="admin.html" style="background-color: #b21f1f;">ADMINISTRATIVO</a>
+    </div>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyDJh57e-sBDK0_8VtFn4EwFOyDDsm8v0lc",
-            authDomain: "plataforma-cecovam.firebaseapp.com",
-            projectId: "plataforma-cecovam",
-            storageBucket: "plataforma-cecovam.firebasestorage.app",
-            messagingSenderId: "655865798424",
-            appId: "1:655865798424:web:625f828d553385e43d24d9",
-            measurementId: "G-H8HXLDKOBJ"
-        };
+    <div class="hero">
+        <h1>Bienvenidos a CECOVAM</h1>
+        <p>Centro de Capacitación y Orientación de Vanguardia Académica de México</p>
+    </div>
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
+    <div class="container">
+        <div class="card">
+            <h2>Acceso a Servicios</h2>
+            <p>Seleccione una opción para continuar:</p>
+            <a href="registro_alumnos.html" class="btn-principal">Nuevo Registro de Alumno</a>
+            <a href="alumnos.html" class="btn-principal">Consultar Calificaciones</a>
+        </div>
+    </div>
 
-        document.getElementById('registroForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const email = document.getElementById('correo').value;
-            const password = document.getElementById('pass').value;
-
-            createUserWithEmailAndPassword(auth, email, password)
-                .then((userCredential) => {
-                    alert("¡Alumno registrado con éxito!");
-                    window.location.href = "login.html";
-                })
-                .catch((error) => {
-                    alert("Error: " + error.message);
-                });
-        });
-    </script>
 </body>
-</html> 
+</html>
