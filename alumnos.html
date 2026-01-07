@@ -2,20 +2,113 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Alumnos - CECOVAM</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aula Virtual Alumnos - CECOVAM</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 50px; background-color: #f4f4f4; }
-        .card { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); display: inline-block; }
-        h1 { color: #2c3e50; }
-        a { color: #3498db; text-decoration: none; font-weight: bold; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: #f4f7f6; text-align: center; }
+        .navbar { background-color: #1a2a6c; padding: 15px; color: white; }
+        .navbar a { color: white; text-decoration: none; font-weight: bold; margin: 0 15px; }
+        .container { padding: 30px; max-width: 800px; margin: auto; }
+        .section-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 25px; }
+        h2 { color: #1a2a6c; }
+        input, button { padding: 10px; margin: 10px; border-radius: 5px; border: 1px solid #ccc; }
+        .btn-subir { background-color: #b21f1f; color: white; border: none; cursor: pointer; font-weight: bold; }
+        .tarea-item { background: #eef2f3; padding: 10px; margin: 10px 0; border-radius: 8px; text-align: left; display: flex; justify-content: space-between; align-items: center; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h1>Sección de Alumnos</h1>
-        <p>Esta área se habilitará para consultas de calificaciones y avisos próximamente.</p>
-        <hr>
-        <a href="inscripcion.html">← Volver al Inicio</a>
+
+    <div class="navbar">
+        <a href="index.html">INICIO</a>
+        <span>ZONA DE ALUMNOS</span>
     </div>
+
+    <div class="container">
+        <div class="section-card">
+            <h2>1. Trabajos y Material para Descargar</h2>
+            <div id="listaTareas">Cargando trabajos disponibles...</div>
+        </div>
+
+        <div class="section-card">
+            <h2>2. Entregar mi Trabajo Terminado</h2>
+            <p>Escribe tu nombre y selecciona tu archivo para enviarlo al docente.</p>
+            <input type="text" id="nombreAlumno" placeholder="Tu Nombre Completo" required><br>
+            <input type="text" id="materiaTarea" placeholder="Materia (ej. Historia)" required><br>
+            <input type="file" id="archivoAlumno" required><br>
+            <button class="btn-subir" onclick="entregarTrabajo()">ENVIAR MI TAREA</button>
+            <p id="estadoEntrega" style="font-weight: bold; color: #1a2a6c;"></p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-storage.js";
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            authDomain: "plataforma-cecovam.firebaseapp.com",
+            projectId: "plataforma-cecovam",
+            storageBucket: "plataforma-cecovam.firebasestorage.app",
+            messagingSenderId: "655865798428",
+            appId: "1:655865798428:web:71e967a5b39918233f2834"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const storage = getStorage(app);
+        const db = getFirestore(app);
+
+        // FUNCIÓN PARA VER LAS TAREAS QUE SUBIÓ EL MAESTRO
+        const cargarTareasDocente = async () => {
+            const q = query(collection(db, "tareas"), orderBy("fecha", "desc"));
+            const querySnapshot = await getDocs(q);
+            const contenedor = document.getElementById('listaTareas');
+            contenedor.innerHTML = "";
+            
+            if (querySnapshot.empty) {
+                contenedor.innerHTML = "<p>No hay trabajos pendientes por ahora.</p>";
+            }
+
+            querySnapshot.forEach((doc) => {
+                const t = doc.data();
+                contenedor.innerHTML += `
+                    <div class="tarea-item">
+                        <span><strong>${t.titulo}</strong></span>
+                        <a href="${t.archivoUrl}" target="_blank" style="color:#b21f1f; text-decoration:none; font-weight:bold;">Descargar</a>
+                    </div>`;
+            });
+        }
+        cargarTareasDocente();
+
+        // FUNCIÓN PARA QUE EL ALUMNO ENTREGUE SU TRABAJO
+        window.entregarTrabajo = async () => {
+            const file = document.getElementById('archivoAlumno').files[0];
+            const alumno = document.getElementById('nombreAlumno').value;
+            const materia = document.getElementById('materiaTarea').value;
+            const estado = document.getElementById('estadoEntrega');
+
+            if(!file || !alumno || !materia) return alert("Por favor completa todos los campos");
+
+            estado.innerText = "Subiendo archivo, espera un momento...";
+            
+            try {
+                const storageRef = ref(storage, 'entregas_alumnos/' + Date.now() + "_" + file.name);
+                await uploadBytes(storageRef, file);
+                const url = await getDownloadURL(storageRef);
+
+                await addDoc(collection(db, "entregas"), {
+                    alumno: alumno,
+                    materia: materia,
+                    archivoUrl: url,
+                    fecha: new Date()
+                });
+
+                estado.innerText = "✅ ¡Tarea enviada correctamente!";
+                alert("¡Tu trabajo ha sido enviado al docente!");
+            } catch (error) {
+                console.error(error);
+                estado.innerText = "❌ Error al enviar. Inténtalo de nuevo.";
+            }
+        }
+    </script>
 </body>
 </html>
