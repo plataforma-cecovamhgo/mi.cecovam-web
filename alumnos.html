@@ -11,9 +11,10 @@
         .container { padding: 30px; max-width: 800px; margin: auto; }
         .section-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 25px; }
         h2 { color: #1a2a6c; }
-        input, button { padding: 10px; margin: 10px; border-radius: 5px; border: 1px solid #ccc; }
-        .btn-subir { background-color: #b21f1f; color: white; border: none; cursor: pointer; font-weight: bold; }
-        .tarea-item { background: #eef2f3; padding: 10px; margin: 10px 0; border-radius: 8px; text-align: left; display: flex; justify-content: space-between; align-items: center; }
+        input, button { padding: 10px; margin: 10px; border-radius: 5px; border: 1px solid #ccc; width: 80%; }
+        .btn-subir { background-color: #b21f1f; color: white; border: none; cursor: pointer; font-weight: bold; width: auto; padding: 10px 30px; }
+        .tarea-item { background: #eef2f3; padding: 15px; margin: 10px 0; border-radius: 8px; text-align: left; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid #b21f1f; }
+        .badge-materia { background: #1a2a6c; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.8em; margin-right: 10px; text-transform: uppercase; }
     </style>
 </head>
 <body>
@@ -25,17 +26,17 @@
 
     <div class="container">
         <div class="section-card">
-            <h2>1. Trabajos y Material para Descargar</h2>
-            <div id="listaTareas">Cargando trabajos disponibles...</div>
+            <h2>1. Trabajos por Materia</h2>
+            <p style="font-size: 0.9em; color: #666;">Descarga aquí el material que tus maestros han publicado.</p>
+            <div id="listaTareas">Cargando trabajos...</div>
         </div>
 
         <div class="section-card">
-            <h2>2. Entregar mi Trabajo Terminado</h2>
-            <p>Escribe tu nombre y selecciona tu archivo para enviarlo al docente.</p>
-            <input type="text" id="nombreAlumno" placeholder="Tu Nombre Completo" required><br>
-            <input type="text" id="materiaTarea" placeholder="Materia (ej. Historia)" required><br>
-            <input type="file" id="archivoAlumno" required><br>
-            <button class="btn-subir" onclick="entregarTrabajo()">ENVIAR MI TAREA</button>
+            <h2>2. Entregar mi Trabajo</h2>
+            <input type="text" id="nombreAlumno" placeholder="Tu Nombre Completo">
+            <input type="text" id="materiaTarea" placeholder="Nombre de la Materia (ej: Matemáticas)">
+            <input type="file" id="archivoAlumno" style="border:none;">
+            <button class="btn-subir" onclick="entregarTrabajo()">SUBIR ENTREGA</button>
             <p id="estadoEntrega" style="font-weight: bold; color: #1a2a6c;"></p>
         </div>
     </div>
@@ -49,7 +50,6 @@
             authDomain: "plataforma-cecovam.firebaseapp.com",
             projectId: "plataforma-cecovam",
             storageBucket: "plataforma-cecovam.firebasestorage.app",
-            messagingSenderId: "655865798428",
             appId: "1:655865798428:web:71e967a5b39918233f2834"
         };
 
@@ -57,7 +57,6 @@
         const storage = getStorage(app);
         const db = getFirestore(app);
 
-        // FUNCIÓN PARA VER LAS TAREAS QUE SUBIÓ EL MAESTRO
         const cargarTareasDocente = async () => {
             const q = query(collection(db, "tareas"), orderBy("fecha", "desc"));
             const querySnapshot = await getDocs(q);
@@ -65,49 +64,41 @@
             contenedor.innerHTML = "";
             
             if (querySnapshot.empty) {
-                contenedor.innerHTML = "<p>No hay trabajos pendientes por ahora.</p>";
+                contenedor.innerHTML = "<p>No hay tareas publicadas todavía.</p>";
+                return;
             }
 
             querySnapshot.forEach((doc) => {
                 const t = doc.data();
                 contenedor.innerHTML += `
                     <div class="tarea-item">
-                        <span><strong>${t.titulo}</strong></span>
+                        <div>
+                            <span class="badge-materia">${t.materia || 'General'}</span>
+                            <strong>${t.titulo}</strong>
+                        </div>
                         <a href="${t.archivoUrl}" target="_blank" style="color:#b21f1f; text-decoration:none; font-weight:bold;">Descargar</a>
                     </div>`;
             });
         }
         cargarTareasDocente();
 
-        // FUNCIÓN PARA QUE EL ALUMNO ENTREGUE SU TRABAJO
         window.entregarTrabajo = async () => {
             const file = document.getElementById('archivoAlumno').files[0];
             const alumno = document.getElementById('nombreAlumno').value;
             const materia = document.getElementById('materiaTarea').value;
             const estado = document.getElementById('estadoEntrega');
 
-            if(!file || !alumno || !materia) return alert("Por favor completa todos los campos");
-
-            estado.innerText = "Subiendo archivo, espera un momento...";
+            if(!file || !alumno || !materia) return alert("Completa todos los campos");
+            estado.innerText = "Enviando archivo...";
             
             try {
                 const storageRef = ref(storage, 'entregas_alumnos/' + Date.now() + "_" + file.name);
                 await uploadBytes(storageRef, file);
                 const url = await getDownloadURL(storageRef);
-
-                await addDoc(collection(db, "entregas"), {
-                    alumno: alumno,
-                    materia: materia,
-                    archivoUrl: url,
-                    fecha: new Date()
-                });
-
-                estado.innerText = "✅ ¡Tarea enviada correctamente!";
-                alert("¡Tu trabajo ha sido enviado al docente!");
-            } catch (error) {
-                console.error(error);
-                estado.innerText = "❌ Error al enviar. Inténtalo de nuevo.";
-            }
+                await addDoc(collection(db, "entregas"), { alumno, materia, archivoUrl: url, fecha: new Date() });
+                estado.innerText = "✅ ¡Tarea entregada con éxito!";
+                alert("¡Tu trabajo ha sido enviado!");
+            } catch (error) { estado.innerText = "❌ Error al enviar."; }
         }
     </script>
 </body>
