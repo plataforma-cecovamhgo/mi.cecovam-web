@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Visor de Planeaciones - CECOVAM</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px; }
+        .container { max-width: 900px; margin: auto; }
+        h1 { color: #1a2a6c; text-align: center; }
+        .planeacion-card { background: white; padding: 20px; border-radius: 10px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-left: 5px solid #b21f1f; }
+        .planeacion-card h3 { margin-top: 0; color: #1a2a6c; }
+        .fecha { color: #666; font-size: 0.9em; }
+        .contenido { background: #f9f9f9; padding: 10px; border-radius: 5px; white-space: pre-wrap; margin-top: 10px; border: 1px inset #eee; }
+        .btn-regresar { display: block; width: fit-content; margin: 20px auto; padding: 10px 20px; background: #1a2a6c; color: white; text-decoration: none; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Planeaciones Recibidas</h1>
+    <div id="listaPlaneaciones">Cargando planeaciones...</div>
+    <a href="administrativo.html" class="btn-regresar">Volver al Panel Admin</a>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyDJh57e-sBDK0_8VtFn4EwFOyDDsm8v0lc",
+        authDomain: "plataforma-cecovam.firebaseapp.com",
+        projectId: "plataforma-cecovam",
+        storageBucket: "plataforma-cecovam.firebasestorage.app",
+        messagingSenderId: "655865798428",
+        appId: "1:655865798428:web:625f020d553385e43d24d9"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Función para leer los datos de Firebase
+    db.collection("planeaciones").orderBy("fechaRegistro", "desc").onSnapshot((querySnapshot) => {
+        const contenedor = document.getElementById("listaPlaneaciones");
+        contenedor.innerHTML = "";
+        
+        if (querySnapshot.empty) {
+            contenedor.innerHTML = "<p style='text-align:center;'>No hay planeaciones registradas aún.</p>";
+            return;
+        }
+
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            contenedor.innerHTML += `
+                <div class="planeacion-card">
+                    <h3>Docente: ${data.docente}</h3>
+                    <p class="fecha"><strong>Semana:</strong> ${data.semana} | <strong>Enviado:</strong> ${data.fechaRegistro}</p>
+                    <div class="contenido">${data.contenido}</div>
+                </div>
+            `;
+        });
+    });
+</script>
+</body>
+</html>
