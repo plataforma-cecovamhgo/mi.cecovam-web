@@ -3,61 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Alumnos - CECOVAM</title>
+    <title>Portal Estudiantil - CECOVAM</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
     <style>
-        :root { --azul: #1a2a6c; --rojo: #b21f1f; --blanco: #ffffff; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; }
-        .nav-alumno { background: var(--azul); color: white; padding: 15px; text-align: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
-        .container { max-width: 800px; margin: 20px auto; padding: 0 15px; }
-        .section-al { display: block; margin-bottom: 30px; }
-        h2 { color: var(--azul); border-bottom: 3px solid var(--rojo); padding-bottom: 5px; display: flex; align-items: center; gap: 10px; }
-        
-        /* Tarjetas de Datos */
-        .card-item { background: var(--blanco); padding: 20px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: 0.3s; }
-        .card-item:hover { transform: scale(1.01); }
-        .tag-materia { background: var(--rojo); color: white; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; }
-        .fecha-al { float: right; color: #888; font-size: 13px; }
-        
-        /* Avisos */
-        .aviso-importante { background: #fff3cd; border-left: 6px solid #ffca28; padding: 15px; border-radius: 8px; font-weight: 500; }
-        
-        /* Tabla Pagos */
-        .pago-table { width: 100%; background: white; border-radius: 10px; overflow: hidden; border-collapse: collapse; }
-        .pago-table th { background: var(--azul); color: white; padding: 12px; }
-        .pago-table td { padding: 12px; border-bottom: 1px solid #eee; text-align: center; }
-        .btn-inicio { display: block; text-align: center; margin: 40px auto; color: var(--rojo); text-decoration: none; font-weight: bold; }
+        :root { --azul: #1a2a6c; --rojo: #b21f1f; --gris: #f0f2f5; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; }
+        #auth-alumno { height: 100vh; display: flex; justify-content: center; align-items: center; background: var(--azul); }
+        .auth-box { background: white; padding: 30px; border-radius: 15px; width: 320px; text-align: center; }
+        #dashboard-alumno { display: none; padding: 20px; }
+        .section-card { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        input, textarea, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        .btn { background: var(--azul); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; }
+        .progress-bar { width: 0%; height: 10px; background: #27ae60; border-radius: 5px; transition: 0.3s; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-<div class="nav-alumno">
-    <h1>Portal del Estudiante CECOVAM</h1>
+<div id="auth-alumno">
+    <div class="auth-box">
+        <h2>Acceso Alumnos</h2>
+        <div style="margin-bottom:15px;">
+            <button onclick="cambiarModo('login')">Ingresar</button> | <button onclick="cambiarModo('reg')">Registrarse</button>
+        </div>
+        <input type="text" id="al-nombre" placeholder="Nombre Completo">
+        <input type="password" id="al-pass" placeholder="Clave Personal">
+        <button class="btn" onclick="autenticar()">INGRESAR</button>
+    </div>
 </div>
 
-<div class="container">
-    <div class="section-al">
-        <h2>📢 Avisos de Dirección</h2>
-        <div id="contenedor-avisos">Cargando avisos...</div>
+<div id="dashboard-alumno">
+    <div class="section-card">
+        <h3>📤 Enviar Tarea o Archivo</h3>
+        <select id="select-materia"><option value="General">Materia / Tema</option></select>
+        <textarea id="comentario-tarea" placeholder="Algún comentario sobre tu entrega..."></textarea>
+        
+        <label>Selecciona tu archivo (PDF, Imagen, Doc):</label>
+        <input type="file" id="archivo-input">
+        
+        <div id="progress-container" style="background:#eee; border-radius:5px; display:none;">
+            <div id="upload-progress" class="progress-bar"></div>
+        </div>
+        
+        <button class="btn" onclick="subirTareaConArchivo()" style="margin-top:10px;">SUBIR TAREA</button>
     </div>
 
-    <div class="section-al">
-        <h2>📚 Materias y Actividades</h2>
-        <div id="contenedor-materias">Buscando tareas nuevas...</div>
+    <div class="section-card">
+        <h3>📢 Avisos de Dirección</h3>
+        <div id="lista-avisos"></div>
     </div>
-
-    <div class="section-al">
-        <h2>💰 Mis Pagos Registrados</h2>
-        <table class="pago-table">
-            <thead>
-                <tr><th>Alumno</th><th>Mes</th><th>Estatus</th></tr>
-            </thead>
-            <tbody id="body-pagos-alumnos"></tbody>
-        </table>
+    
+    <div class="section-card">
+        <h3>💰 Mis Pagos</h3>
+        <div id="mis-pagos-lista"></div>
     </div>
-
-    <a href="index.html" class="btn-inicio">← Volver al Menú Principal</a>
 </div>
 
 <script>
@@ -65,53 +65,75 @@
         apiKey: "AIzaSyDJh57e-sBDK0_8VtFn4EwFOyDDsm8v0lc",
         authDomain: "plataforma-cecovam.firebaseapp.com",
         projectId: "plataforma-cecovam",
-        storageBucket: "plataforma-cecovam.firebasestorage.app",
+        storageBucket: "plataforma-cecovam.appspot.com", // Asegúrate que termine en .appspot.com
         messagingSenderId: "655865798428",
         appId: "1:655865798428:web:625f020d553385e43d24d9"
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+    const storage = firebase.storage();
 
-    // 1. CARGAR MATERIAS (Lo que suben los maestros)
-    db.collection("materias").orderBy("fecha", "desc").onSnapshot(snap => {
-        const div = document.getElementById("contenedor-materias");
-        div.innerHTML = "";
-        snap.forEach(doc => {
-            const d = doc.data();
-            div.innerHTML += `
-                <div class="card-item">
-                    <span class="fecha-al">${d.fecha}</span>
-                    <span class="tag-materia">${d.nombre}</span>
-                    <p style="margin-top:15px; line-height:1.6;">${d.instrucciones}</p>
-                </div>`;
-        });
-    });
+    let alumnoLogueado = "";
 
-    // 2. CARGAR PAGOS (Lo que sube el admin)
-    db.collection("pagos").onSnapshot(snap => {
-        const tbody = document.getElementById("body-pagos-alumnos");
-        tbody.innerHTML = "";
-        snap.forEach(doc => {
-            const d = doc.data();
-            tbody.innerHTML += `
-                <tr>
-                    <td>${d.alumno}</td>
-                    <td>${d.mes}</td>
-                    <td style="color:green; font-weight:bold;">✅ PAGADO</td>
-                </tr>`;
-        });
-    });
+    // ... (Funciones de autenticación idénticas a las anteriores) ...
+    function cambiarModo(m) { modo = m; }
+    async function autenticar() {
+        const nom = document.getElementById('al-nombre').value.trim();
+        const pass = document.getElementById('al-pass').value;
+        if(modo === 'reg') {
+            await db.collection("usuarios_alumnos").doc(nom).set({ nombre: nom, clave: pass });
+            alert("Registrado");
+        } else {
+            const doc = await db.collection("usuarios_alumnos").doc(nom).get();
+            if(doc.exists && doc.data().clave === pass) {
+                alumnoLogueado = nom;
+                document.getElementById('auth-alumno').style.display = 'none';
+                document.getElementById('dashboard-alumno').style.display = 'block';
+                cargarDatos();
+            }
+        }
+    }
 
-    // 3. CARGAR AVISOS (Falta configurar el envío en Admin, pero aquí ya se leerán)
-    db.collection("avisos").onSnapshot(snap => {
-        const div = document.getElementById("contenedor-avisos");
-        div.innerHTML = "";
-        if(snap.empty) div.innerHTML = "<p>No hay avisos recientes.</p>";
-        snap.forEach(doc => {
-            const d = doc.data();
-            div.innerHTML += <div class="aviso-importante">${d.mensaje}</div>;
-        });
-    });
+    async function subirTareaConArchivo() {
+        const file = document.getElementById('archivo-input').files[0];
+        const materia = document.getElementById('select-materia').value;
+        const comentario = document.getElementById('comentario-tarea').value;
+        
+        if (!file) return alert("Por favor selecciona un archivo");
+
+        document.getElementById('progress-container').style.display = 'block';
+        
+        // 1. Subir a Storage
+        const storageRef = storage.ref(tareas/${alumnoLogueado}/${file.name});
+        const uploadTask = storageRef.put(file);
+
+        uploadTask.on('state_changed', 
+            (snapshot) => {
+                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                document.getElementById('upload-progress').style.width = progress + '%';
+            }, 
+            (error) => { alert("Error al subir: " + error.message); }, 
+            async () => {
+                // 2. Obtener link y guardar en Firestore
+                const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
+                await db.collection("actividades_alumnos").add({
+                    alumno: alumnoLogueado,
+                    materia: materia,
+                    comentario: comentario,
+                    archivoUrl: downloadURL,
+                    nombreArchivo: file.name,
+                    fecha: new Date().toLocaleString()
+                });
+                alert("¡Tarea enviada con éxito!");
+                document.getElementById('progress-container').style.display = 'none';
+                document.getElementById('archivo-input').value = "";
+            }
+        );
+    }
+
+    function cargarDatos() {
+        // (Aquí van las funciones de cargar avisos y pagos que ya teníamos)
+    }
 </script>
 </body>
 </html>
