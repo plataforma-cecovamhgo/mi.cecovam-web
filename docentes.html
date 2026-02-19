@@ -3,42 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Docentes - CECOVAM</title>
+    <title>Panel Docente - CECOVAM</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; text-align: center; }
-        .header { background-color: #1a2a6c; color: white; padding: 20px; border-radius: 10px; margin-bottom: 30px; }
-        .container { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; }
-        .card-work { background: white; border-left: 5px solid #b21f1f; padding: 20px; width: 250px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); cursor: pointer; transition: 0.3s; }
-        .card-work:hover { transform: translateY(-5px); background-color: #f9f9f9; }
-        .card-work h3 { color: #1a2a6c; margin-top: 0; }
-        .btn-volver { display: inline-block; margin-top: 30px; padding: 10px 20px; background-color: #b21f1f; color: white; text-decoration: none; border-radius: 5px; }
+        :root { --azul: #1a2a6c; --rojo: #b21f1f; --blanco: #ffffff; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        
+        /* PANTALLA DE ACCESO/REGISTRO */
+        #auth-container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 350px; text-align: center; }
+        .tab-buttons { display: flex; margin-bottom: 20px; border-bottom: 2px solid #eee; }
+        .tab-btn { flex: 1; padding: 10px; cursor: pointer; border: none; background: none; font-weight: bold; color: #888; }
+        .tab-btn.active { color: var(--rojo); border-bottom: 2px solid var(--rojo); }
+        
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        .btn-action { width: 100%; padding: 12px; border: none; border-radius: 8px; background: var(--azul); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        
+        /* PANEL DE TRABAJO (Oculto al inicio) */
+        #docente-content { display: none; width: 90%; max-width: 800px; background: white; padding: 30px; border-radius: 15px; margin: 20px; }
+        .header-doc { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--rojo); padding-bottom: 10px; margin-bottom: 20px; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h1>Bienvenido al Panel de Control de Maestros</h1>
-        <p>Seleccione la actividad que desea realizar hoy</p>
+<div id="auth-container">
+    <h2 id="auth-title">Acceso Docente</h2>
+    <div class="tab-buttons">
+        <button class="tab-btn active" onclick="switchTab('login')">Ingresar</button>
+        <button class="tab-btn" onclick="switchTab('signup')">Registrarme</button>
     </div>
 
-    <div class="container">
-        <div class="card-work" onclick="location.href='asistencias.html'">
-            <h3>Control de Asistencia</h3>
-            <p>Pasar lista diaria a los grupos.</p>
-        </div>
-
-        <div class="card-work" onclick="location.href='gestion_materias.html'">
-            <h3>Gestión de Materias</h3>
-            <p>Publicar nuevas materias y tareas.</p>
-        </div>
-
-        <div class="card-work" onclick="location.href='planeaciones.html'">
-            <h3>Planeaciones</h3>
-            <p>Subir el plan de trabajo semanal.</p>
-        </div>
+    <div id="form-login">
+        <input type="text" id="log-nombre" placeholder="Nombre completo">
+        <input type="password" id="log-pass" placeholder="Tu clave personal">
+        <button class="btn-action" onclick="iniciarSesion()">ENTRAR</button>
     </div>
 
-    <a href="index.html" class="btn-volver">Volver al Inicio</a>
+    <div id="form-signup" style="display: none;">
+        <p style="font-size: 13px; color: #666;">Crea tu perfil docente para empezar</p>
+        <input type="text" id="reg-nombre" placeholder="Nombre completo">
+        <input type="password" id="reg-pass" placeholder="Inventa una clave">
+        <button class="btn-action" style="background: var(--rojo);" onclick="registrarDocente()">CREAR CUENTA</button>
+    </div>
+</div>
 
+<div id="docente-content">
+    <div class="header-doc">
+        <h2>Bienvenido(a), <span id="nombre-maestro">Maestro</span></h2>
+        <button onclick="location.reload()" style="background:none; border:none; color:var(--rojo); cursor:pointer;">Cerrar Sesión</button>
+    </div>
+    
+    <h3>Acciones Rápidas:</h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+        <button class="btn-action" onclick="alert('Abriendo Planeaciones...')">📄 Subir Planeación</button>
+        <button class="btn-action" onclick="alert('Abriendo Asistencias...')">✅ Pasar Lista</button>
+    </div>
+    <p style="margin-top: 20px; color: #666; font-size: 14px;">Use los botones de arriba para gestionar sus clases.</p>
+</div>
+
+<script>
+    // Configuración Firebase (La misma que usas)
+    const firebaseConfig = {
+        apiKey: "AIzaSyDJh57e-sBDK0_8VtFn4EwFOyDDsm8v0lc",
+        authDomain: "plataforma-cecovam.firebaseapp.com",
+        projectId: "plataforma-cecovam",
+        storageBucket: "plataforma-cecovam.firebasestorage.app",
+        messagingSenderId: "655865798428",
+        appId: "1:655865798428:web:625f020d553385e43d24d9"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Cambiar entre pestañas de Login y Registro
+    function switchTab(type) {
+        const isLogin = type === 'login';
+        document.getElementById('form-login').style.display = isLogin ? 'block' : 'none';
+        document.getElementById('form-signup').style.display = isLogin ? 'none' : 'block';
+        document.querySelectorAll('.tab-btn').forEach((b, i) => {
+            b.classList.toggle('active', (isLogin && i === 0) || (!isLogin && i === 1));
+        });
+    }
+
+    // REGISTRAR NUEVO DOCENTE
+    async function registrarDocente() {
+        const nombre = document.getElementById('reg-nombre').value.trim();
+        const pass = document.getElementById('reg-pass').value;
+
+        if(!nombre || !pass) return alert("Por favor llena todos los campos");
+
+        // Guardar en Firebase
+        await db.collection("usuarios_docentes").doc(nombre).set({
+            nombre: nombre,
+            clave: pass,
+            fechaRegistro: new Date().toLocaleDateString()
+        });
+        alert("¡Cuenta creada con éxito! Ahora puedes ingresar.");
+        switchTab('login');
+    }
+
+    // INICIAR SESIÓN
+    async function iniciarSesion() {
+        const nombre = document.getElementById('log-nombre').value.trim();
+        const pass = document.getElementById('log-pass').value;
+
+        const doc = await db.collection("usuarios_docentes").doc(nombre).get();
+
+        if (doc.exists && doc.data().clave === pass) {
+            document.getElementById('auth-container').style.display = 'none';
+            document.getElementById('docente-content').style.display = 'block';
+            document.getElementById('nombre-maestro').innerText = nombre;
+        } else {
+            alert("Nombre o clave incorrectos. Verifica tus datos.");
+        }
+    }
+</script>
 </body>
 </html>
