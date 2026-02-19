@@ -3,103 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aula Virtual Alumnos - CECOVAM</title>
+    <title>Panel de Alumnos - CECOVAM</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: #f4f7f6; text-align: center; }
-        .navbar { background-color: #1a2a6c; padding: 15px; color: white; }
-        .navbar a { color: white; text-decoration: none; font-weight: bold; margin: 0 15px; }
-        .container { padding: 30px; max-width: 800px; margin: auto; }
-        .section-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 25px; }
-        h2 { color: #1a2a6c; }
-        input, button { padding: 10px; margin: 10px; border-radius: 5px; border: 1px solid #ccc; width: 80%; }
-        .btn-subir { background-color: #b21f1f; color: white; border: none; cursor: pointer; font-weight: bold; width: auto; padding: 10px 30px; }
-        .tarea-item { background: #eef2f3; padding: 15px; margin: 10px 0; border-radius: 8px; text-align: left; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid #b21f1f; }
-        .badge-materia { background: #1a2a6c; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.8em; margin-right: 10px; text-transform: uppercase; }
+        :root { --azul: #1a2a6c; --rojo: #b21f1f; --blanco: #ffffff; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; }
+        .nav-alumno { background: var(--azul); color: white; padding: 15px; text-align: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        .container { max-width: 800px; margin: 20px auto; padding: 0 15px; }
+        .section-al { display: block; margin-bottom: 30px; }
+        h2 { color: var(--azul); border-bottom: 3px solid var(--rojo); padding-bottom: 5px; display: flex; align-items: center; gap: 10px; }
+        
+        /* Tarjetas de Datos */
+        .card-item { background: var(--blanco); padding: 20px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: 0.3s; }
+        .card-item:hover { transform: scale(1.01); }
+        .tag-materia { background: var(--rojo); color: white; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+        .fecha-al { float: right; color: #888; font-size: 13px; }
+        
+        /* Avisos */
+        .aviso-importante { background: #fff3cd; border-left: 6px solid #ffca28; padding: 15px; border-radius: 8px; font-weight: 500; }
+        
+        /* Tabla Pagos */
+        .pago-table { width: 100%; background: white; border-radius: 10px; overflow: hidden; border-collapse: collapse; }
+        .pago-table th { background: var(--azul); color: white; padding: 12px; }
+        .pago-table td { padding: 12px; border-bottom: 1px solid #eee; text-align: center; }
+        .btn-inicio { display: block; text-align: center; margin: 40px auto; color: var(--rojo); text-decoration: none; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div class="navbar">
-        <a href="index.html">INICIO</a>
-        <span>ZONA DE ALUMNOS</span>
+<div class="nav-alumno">
+    <h1>Portal del Estudiante CECOVAM</h1>
+</div>
+
+<div class="container">
+    <div class="section-al">
+        <h2>📢 Avisos de Dirección</h2>
+        <div id="contenedor-avisos">Cargando avisos...</div>
     </div>
 
-    <div class="container">
-        <div class="section-card">
-            <h2>1. Trabajos por Materia</h2>
-            <p style="font-size: 0.9em; color: #666;">Descarga aquí el material que tus maestros han publicado.</p>
-            <div id="listaTareas">Cargando trabajos...</div>
-        </div>
-
-        <div class="section-card">
-            <h2>2. Entregar mi Trabajo</h2>
-            <input type="text" id="nombreAlumno" placeholder="Tu Nombre Completo">
-            <input type="text" id="materiaTarea" placeholder="Nombre de la Materia (ej: Matemáticas)">
-            <input type="file" id="archivoAlumno" style="border:none;">
-            <button class="btn-subir" onclick="entregarTrabajo()">SUBIR ENTREGA</button>
-            <p id="estadoEntrega" style="font-weight: bold; color: #1a2a6c;"></p>
-        </div>
+    <div class="section-al">
+        <h2>📚 Materias y Actividades</h2>
+        <div id="contenedor-materias">Buscando tareas nuevas...</div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-storage.js";
-        import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    <div class="section-al">
+        <h2>💰 Mis Pagos Registrados</h2>
+        <table class="pago-table">
+            <thead>
+                <tr><th>Alumno</th><th>Mes</th><th>Estatus</th></tr>
+            </thead>
+            <tbody id="body-pagos-alumnos"></tbody>
+        </table>
+    </div>
 
-        const firebaseConfig = {
-            authDomain: "plataforma-cecovam.firebaseapp.com",
-            projectId: "plataforma-cecovam",
-            storageBucket: "plataforma-cecovam.firebasestorage.app",
-            appId: "1:655865798428:web:71e967a5b39918233f2834"
-        };
+    <a href="index.html" class="btn-inicio">← Volver al Menú Principal</a>
+</div>
 
-        const app = initializeApp(firebaseConfig);
-        const storage = getStorage(app);
-        const db = getFirestore(app);
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyDJh57e-sBDK0_8VtFn4EwFOyDDsm8v0lc",
+        authDomain: "plataforma-cecovam.firebaseapp.com",
+        projectId: "plataforma-cecovam",
+        storageBucket: "plataforma-cecovam.firebasestorage.app",
+        messagingSenderId: "655865798428",
+        appId: "1:655865798428:web:625f020d553385e43d24d9"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-        const cargarTareasDocente = async () => {
-            const q = query(collection(db, "tareas"), orderBy("fecha", "desc"));
-            const querySnapshot = await getDocs(q);
-            const contenedor = document.getElementById('listaTareas');
-            contenedor.innerHTML = "";
-            
-            if (querySnapshot.empty) {
-                contenedor.innerHTML = "<p>No hay tareas publicadas todavía.</p>";
-                return;
-            }
+    // 1. CARGAR MATERIAS (Lo que suben los maestros)
+    db.collection("materias").orderBy("fecha", "desc").onSnapshot(snap => {
+        const div = document.getElementById("contenedor-materias");
+        div.innerHTML = "";
+        snap.forEach(doc => {
+            const d = doc.data();
+            div.innerHTML += `
+                <div class="card-item">
+                    <span class="fecha-al">${d.fecha}</span>
+                    <span class="tag-materia">${d.nombre}</span>
+                    <p style="margin-top:15px; line-height:1.6;">${d.instrucciones}</p>
+                </div>`;
+        });
+    });
 
-            querySnapshot.forEach((doc) => {
-                const t = doc.data();
-                contenedor.innerHTML += `
-                    <div class="tarea-item">
-                        <div>
-                            <span class="badge-materia">${t.materia || 'General'}</span>
-                            <strong>${t.titulo}</strong>
-                        </div>
-                        <a href="${t.archivoUrl}" target="_blank" style="color:#b21f1f; text-decoration:none; font-weight:bold;">Descargar</a>
-                    </div>`;
-            });
-        }
-        cargarTareasDocente();
+    // 2. CARGAR PAGOS (Lo que sube el admin)
+    db.collection("pagos").onSnapshot(snap => {
+        const tbody = document.getElementById("body-pagos-alumnos");
+        tbody.innerHTML = "";
+        snap.forEach(doc => {
+            const d = doc.data();
+            tbody.innerHTML += `
+                <tr>
+                    <td>${d.alumno}</td>
+                    <td>${d.mes}</td>
+                    <td style="color:green; font-weight:bold;">✅ PAGADO</td>
+                </tr>`;
+        });
+    });
 
-        window.entregarTrabajo = async () => {
-            const file = document.getElementById('archivoAlumno').files[0];
-            const alumno = document.getElementById('nombreAlumno').value;
-            const materia = document.getElementById('materiaTarea').value;
-            const estado = document.getElementById('estadoEntrega');
-
-            if(!file || !alumno || !materia) return alert("Completa todos los campos");
-            estado.innerText = "Enviando archivo...";
-            
-            try {
-                const storageRef = ref(storage, 'entregas_alumnos/' + Date.now() + "_" + file.name);
-                await uploadBytes(storageRef, file);
-                const url = await getDownloadURL(storageRef);
-                await addDoc(collection(db, "entregas"), { alumno, materia, archivoUrl: url, fecha: new Date() });
-                estado.innerText = "✅ ¡Tarea entregada con éxito!";
-                alert("¡Tu trabajo ha sido enviado!");
-            } catch (error) { estado.innerText = "❌ Error al enviar."; }
-        }
-    </script>
+    // 3. CARGAR AVISOS (Falta configurar el envío en Admin, pero aquí ya se leerán)
+    db.collection("avisos").onSnapshot(snap => {
+        const div = document.getElementById("contenedor-avisos");
+        div.innerHTML = "";
+        if(snap.empty) div.innerHTML = "<p>No hay avisos recientes.</p>";
+        snap.forEach(doc => {
+            const d = doc.data();
+            div.innerHTML += <div class="aviso-importante">${d.mensaje}</div>;
+        });
+    });
+</script>
 </body>
 </html>
