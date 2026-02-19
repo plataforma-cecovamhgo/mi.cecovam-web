@@ -2,78 +2,76 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel Administrativo - CECOVAM</title>
     <style>
-        body { font-family: sans-serif; display: none; } /* Oculto hasta poner clave */
-        nav { display: flex; justify-content: space-between; padding: 15px; background: #2c3e50; color: white; }
-        .menu-izq a { margin-right: 25px; color: white; text-decoration: none; font-weight: bold; }
-        .btn-admin { background: #e74c3c; padding: 8px 15px; border-radius: 5px; color: white; text-decoration: none; }
-        .section { padding: 30px; border: 2px solid #ddd; margin: 20px; border-radius: 10px; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; display: flex; }
+        .sidebar { width: 250px; background: #1a2a6c; color: white; min-height: 100vh; padding: 20px; }
+        .main-content { flex: 1; padding: 30px; }
+        .header-admin { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 25px; }
+        .grid-admin { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+        .card-admin { background: white; padding: 20px; border-radius: 10px; text-align: center; border-top: 4px solid #b21f1f; box-shadow: 0 4px 6px rgba(0,0,0,0.05); cursor: pointer; transition: 0.3s; }
+        .card-admin:hover { transform: translateY(-5px); box-shadow: 0 6px 12px rgba(0,0,0,0.1); }
+        .card-admin h3 { color: #1a2a6c; font-size: 16px; margin: 10px 0; }
+        .sidebar h2 { border-bottom: 1px solid #ffffff33; padding-bottom: 10px; font-size: 20px; }
+        .menu-item { padding: 12px; cursor: pointer; border-radius: 5px; margin-bottom: 5px; }
+        .menu-item:hover { background: #ffffff22; }
     </style>
 </head>
 <body>
-    <script>
-        // CAMBIA '1234' POR LA CLAVE QUE TÚ QUIERAS
-        var password = prompt("Acceso restringido. Ingresa la clave de administrador:");
-        if (password === "1234") {
-            document.body.style.display = "block";
-        } else {
-            alert("Clave incorrecta");
-            window.location.href = "inscripcion.html";
-        }
-    </script>
 
-    <nav>
-        <div class="menu-izq">
-            <a href="alumnos.html">ALUMNOS</a>
-            <a href="docentes.html">DOCENTES</a>
-        </div>
-        <a href="admin.html" class="btn-admin">ADMINISTRATIVO</a>
-    </nav>
+<div class="sidebar">
+    <h2>CECOVAM Admin</h2>
+    <div class="menu-item" onclick="location.href='index.html'">🏠 Inicio Público</div>
+    <div class="menu-item" onclick="alert('Abriendo avisos...')">📢 Subir Avisos</div>
+    <div class="menu-item" onclick="location.href='https://console.firebase.google.com/'">🔥 Base de Datos</div>
+    <hr>
+    <div class="menu-item" style="color: #ff4d4d;" onclick="location.href='index.html'">Cerrar Sesión</div>
+</div>
 
-    <div class="section">
-        <h2>Panel de Comunicación (Solo Personal)</h2>
-        <p>Selecciona una imagen o circular para publicar:</p>
-        <input type="file" id="archivoImagen" accept="image/*">
-        <br><br>
-        <button onclick="subirImagen()" style="padding: 10px; background: #27ae60; color: white; border: none; border-radius: 5px; cursor: pointer;">
-            PUBLICAR COMUNICADO
-        </button>
-        <p id="status"></p>
+<div class="main-content">
+    <div class="header-admin">
+        <h1>Panel de Control Administrativo</h1>
+        <p>Gestión integral de la institución</p>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <div class="grid-admin">
+        <div class="card-admin" onclick="alert('Cargando planeaciones guardadas en Firebase...')">
+            <h3>📑 Checar Planeaciones</h3>
+            <p><small>Ver avances de maestros</small></p>
+        </div>
 
-    <script>
-        const firebaseConfig = {
-  apiKey: "AIzaSyDJh57e-sBDK0_8VtFn4EwFOyDDsm8v0lc",
-  authDomain: "plataforma-cecovam.firebaseapp.com",
-  projectId: "plataforma-cecovam",
-  storageBucket: "plataforma-cecovam.firebasestorage.app",
-  messagingSenderId: "655865798428",
-  appId: "1:655865798428:web:625f020d553385e43d24d9",
-  measurementId: "G-H8HXLDQK8J"
-};
+        <div class="card-admin" onclick="alert('Cargando lista de tareas publicadas...')">
+            <h3>📝 Verificar Tareas</h3>
+            <p><small>Control de materias</small></p>
+        </div>
 
-        // === NO TOCAR ABAJO ===
-        firebase.initializeApp(firebaseConfig);
-        async function subirImagen() {
-            const file = document.getElementById('archivoImagen').files[0];
-            if (!file) return alert("Selecciona una imagen");
-            document.getElementById('status').innerText = "Subiendo archivo...";
-            try {
-                const storageRef = firebase.storage().ref('comunicados/' + file.name);
-                await storageRef.put(file);
-                const url = await storageRef.getDownloadURL();
-                await firebase.database().ref('comunicados').push({ url: url, fecha: new Date().toLocaleString() });
-                alert("¡Comunicado publicado con éxito!");
-                document.getElementById('status').innerText = "";
-            } catch (e) { alert("Error al subir: " + e.message); }
-        }
-    </script>
-</body>
-</html>
+        <div class="card-admin" onclick="alert('Módulo de asistencia docente en desarrollo')">
+            <h3>⏰ Asistencia Docente</h3>
+            <p><small>Entradas y salidas</small></p>
+        </div>
+
+        <div class="card-admin" onclick="alert('Módulo de pagos próximamente')">
+            <h3>💰 Control de Pagos</h3>
+            <p><small>Colegiaturas e inscripciones</small></p>
+        </div>
+
+        <div class="card-admin" onclick="alert('Área de recursos escolares')">
+            <h3>📂 Recursos</h3>
+            <p><small>Inventario y material</small></p>
+        </div>
+
+        <div class="card-admin" onclick="alert('Gestión de archivos institucionales')">
+            <h3>📁 Archivos</h3>
+            <p><small>Documentación oficial</small></p>
+        </div>
+
+        <div class="card-admin" onclick="alert('Módulo de avisos escolares')">
+            <h3>📣 Avisos Escolares</h3>
+            <p><small>Publicar noticias</small></p>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>
