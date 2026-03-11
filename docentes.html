@@ -3,124 +3,179 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Docente Integrado - CECOVAM</title>
+    <title>Portal Docentes - CECOVAM</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
     <style>
-        :root { --azul: #1a2a6c; --rojo: #b21f1f; --gris: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        
-        /* AUTH */
-        #auth-container { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 350px; text-align: center; }
-        .tab-btn { padding: 10px 20px; cursor: pointer; border: none; background: none; font-weight: bold; color: #888; }
-        .tab-btn.active { color: var(--rojo); border-bottom: 2px solid var(--rojo); }
-        input, textarea { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        
-        /* PANEL */
-        #docente-content { display: none; width: 95%; max-width: 900px; background: white; padding: 30px; border-radius: 15px; margin: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
-        .header-doc { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--rojo); margin-bottom: 20px; }
-        .grid-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .tool-card { background: #f9f9f9; padding: 20px; border-radius: 10px; border: 1px solid #eee; }
-        .btn-send { width: 100%; padding: 12px; border: none; border-radius: 8px; background: var(--azul); color: white; font-weight: bold; cursor: pointer; }
+        :root { --verde: #27ae60; --azul: #1a2a6c; --gris: #f4f7f6; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: auto; }
+        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        input, textarea, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.3s; }
+        .btn-azul { background: var(--azul); }
+        .btn-verde { background: var(--verde); }
+        #panel-docente { display: none; }
+        h2, h3 { color: var(--azul); margin-top: 0; }
+        .badge { display: inline-block; padding: 5px 10px; background: #eee; border-radius: 5px; font-size: 12px; margin-top: 5px; }
     </style>
 </head>
 <body>
 
-<div id="auth-container">
-    <h2>Acceso CECOVAM</h2>
-    <div style="margin-bottom:20px;">
-        <button class="tab-btn active" id="t-log" onclick="switchTab('login')">Ingresar</button>
-        <button class="tab-btn" id="t-reg" onclick="switchTab('signup')">Registrarme</button>
-    </div>
-    <div id="f-auth">
-        <input type="text" id="u-nombre" placeholder="Nombre completo">
-        <input type="password" id="u-pass" placeholder="Clave personal">
-        <button class="btn-send" id="btn-main" onclick="procesarAuth()">INGRESAR</button>
-    </div>
-</div>
-
-<div id="docente-content">
-    <div class="header-doc">
-        <h2>Panel de Trabajo: <span id="display-nombre">...</span></h2>
-        <button onclick="location.reload()" style="color:var(--rojo); font-weight:bold; cursor:pointer; background:none; border:none;">SALIR</button>
+<div class="container">
+    <div id="auth-docente" class="card" style="max-width: 400px; margin: 50px auto;">
+        <h2 id="txt-auth">Acceso Docentes</h2>
+        <input type="text" id="nom-doc" placeholder="Nombre Completo">
+        <input type="password" id="pass-doc" placeholder="Clave Personal">
+        <button class="btn btn-azul" onclick="autenticarDocente()">INGRESAR / REGISTRAR</button>
+        <p style="font-size: 12px; color: #666; text-align: center; margin-top: 15px;">
+            Si es tu primera vez, escribe tu nombre y una clave para registrarte automáticamente.
+        </p>
     </div>
 
-    <div class="grid-tools">
-        <div class="tool-card">
-            <h3>📑 Subir Planeación</h3>
-            <input type="text" id="p-semana" placeholder="Semana (ej. 20-24 Oct)">
-            <textarea id="p-contenido" rows="5" placeholder="Escribe aquí tu plan de clase..."></textarea>
-            <button class="btn-send" onclick="enviarPlaneacion()">Guardar Planeación</button>
+    <div id="panel-docente">
+        <div class="card">
+            <h2>Bienvenido(a), <span id="nombre-saludo"></span></h2>
+            <button onclick="location.reload()" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold;">Cerrar Sesión</button>
         </div>
 
-        <div class="tool-card">
-            <h3>✅ Pasar Lista</h3>
-            <p style="font-size:12px; color:#666;">Escribe nombres separados por coma:</p>
-            <textarea id="a-lista" rows="5" placeholder="Juan Pérez, Maria Sosa, etc."></textarea>
-            <button class="btn-send" style="background:#27ae60;" onclick="enviarAsistencia()">Registrar Asistencia</button>
+        <div class="card" style="border-left: 8px solid var(--verde);">
+            <h3>📤 Repositorio de Materiales y Tareas</h3>
+            <p>Sube archivos para que tus alumnos los descarguen (PDF, Word, Excel, Imágenes, etc.)</p>
+            <input type="text" id="mat-materia" placeholder="Materia (Ej: Matemáticas II)">
+            <input type="text" id="mat-titulo" placeholder="Título del Material (Ej: Guía de Examen)">
+            <textarea id="mat-desc" placeholder="Instrucciones para los alumnos..."></textarea>
+            <input type="file" id="mat-archivo">
+            <button class="btn btn-verde" onclick="subirMaterial()">PUBLICAR MATERIAL A ALUMNOS</button>
+            <div id="mis-subidas" style="margin-top:15px; font-size: 13px;"></div>
+        </div>
+
+        <div class="card" style="border-left: 8px solid var(--azul);">
+            <h3>📑 Administración de Clase</h3>
+            <label>Pasar Lista (Nombres separados por comas):</label>
+            <textarea id="asistencia-lista" placeholder="Ej: Juan Perez, Maria Lopez..."></textarea>
+            <button class="btn btn-azul" onclick="subirAsistencia()" style="margin-bottom: 20px;">REGISTRAR ASISTENCIA</button>
+
+            <label>Planeación Semanal (Texto para Dirección):</label>
+            <textarea id="plan-texto" placeholder="Escribe aquí tu planeación..."></textarea>
+            <button class="btn btn-azul" onclick="subirPlaneacion()">ENVIAR PLANEACIÓN A DIRECCIÓN</button>
         </div>
     </div>
 </div>
 
 <script>
+    // Configuración Firebase (Usa tus mismos datos)
     const firebaseConfig = {
         apiKey: "AIzaSyDJh57e-sBDK0_8VtFn4EwFOyDDsm8v0lc",
         authDomain: "plataforma-cecovam.firebaseapp.com",
         projectId: "plataforma-cecovam",
-        storageBucket: "plataforma-cecovam.firebasestorage.app",
+        storageBucket: "plataforma-cecovam.appspot.com",
         messagingSenderId: "655865798428",
         appId: "1:655865798428:web:625f020d553385e43d24d9"
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+    const storage = firebase.storage();
 
-    let modo = 'login';
     let maestroActivo = "";
 
-    function switchTab(t) {
-        modo = t;
-        document.getElementById('t-log').classList.toggle('active', t==='login');
-        document.getElementById('t-reg').classList.toggle('active', t==='signup');
-        document.getElementById('btn-main').innerText = t==='login' ? 'INGRESAR' : 'CREAR CUENTA';
-    }
+    // AUTENTICACIÓN
+    async function autenticarDocente() {
+        const n = document.getElementById("nom-doc").value.trim();
+        const c = document.getElementById("pass-doc").value.trim();
+        if(!n || !c) return alert("Llena todos los campos");
 
-    async function procesarAuth() {
-        const nom = document.getElementById('u-nombre').value.trim();
-        const p = document.getElementById('u-pass').value;
-        if(!nom || !p) return alert("Completa los datos");
+        const docRef = db.collection("usuarios_docentes").doc(n);
+        const res = await docRef.get();
 
-        if(modo === 'signup') {
-            await db.collection("usuarios_docentes").doc(nom).set({ nombre: nom, clave: p });
-            alert("Cuenta creada. Ahora ingresa.");
-            switchTab('login');
+        if(res.exists) {
+            if(res.data().clave === c) loginExitoso(n);
+            else alert("Clave incorrecta");
         } else {
-            const doc = await db.collection("usuarios_docentes").doc(nom).get();
-            if(doc.exists && doc.data().clave === p) {
-                maestroActivo = nom;
-                document.getElementById('auth-container').style.display='none';
-                document.getElementById('docente-content').style.display='block';
-                document.getElementById('display-nombre').innerText = nom;
-            } else { alert("Datos incorrectos"); }
+            await docRef.set({ nombre: n, clave: c });
+            loginExitoso(n);
         }
     }
 
-    async function enviarPlaneacion() {
-        const sem = document.getElementById('p-semana').value;
-        const cont = document.getElementById('p-contenido').value;
-        await db.collection("planeaciones").add({
-            docente: maestroActivo, semana: sem, contenido: cont, fechaRegistro: new Date().toLocaleString()
-        });
-        alert("Planeación enviada");
-        document.getElementById('p-semana').value = ""; document.getElementById('p-contenido').value = "";
+    function loginExitoso(nombre) {
+        maestroActivo = nombre;
+        document.getElementById("auth-docente").style.display = "none";
+        document.getElementById("panel-docente").style.display = "block";
+        document.getElementById("nombre-saludo").innerText = nombre;
+        cargarMisSubidas();
     }
 
-    async function enviarAsistencia() {
-        const lista = document.getElementById('a-lista').value.split(",");
-        await db.collection("asistencias").add({
-            maestro: maestroActivo, alumnos: lista, fecha: new Date().toLocaleDateString()
+    // --- NUEVA FUNCIÓN: SUBIR ARCHIVOS (PDF, WORD, ETC) ---
+    async function subirMaterial() {
+        const file = document.getElementById("mat-archivo").files[0];
+        const materia = document.getElementById("mat-materia").value;
+        const titulo = document.getElementById("mat-titulo").value;
+        const desc = document.getElementById("mat-desc").value;
+
+        if(!file || !materia || !titulo) return alert("Faltan datos o archivo");
+
+        const btn = document.querySelector(".btn-verde");
+        btn.innerText = "Subiendo archivo... espera...";
+        btn.disabled = true;
+
+        try {
+            const ruta = material_clases/${maestroActivo}/${file.name};
+            const ref = storage.ref(ruta);
+            await ref.put(file);
+            const url = await ref.getDownloadURL();
+
+            await db.collection("material_docente").add({
+                docente: maestroActivo,
+                materia: materia,
+                titulo: titulo,
+                descripcion: desc,
+                archivoUrl: url,
+                nombreArchivo: file.name,
+                fecha: new Date().toLocaleString()
+            });
+
+            alert("¡Material publicado para los alumnos!");
+            location.reload(); 
+        } catch (e) {
+            alert("Error al subir: " + e);
+            btn.disabled = false;
+            btn.innerText = "PUBLICAR MATERIAL A ALUMNOS";
+        }
+    }
+
+    function cargarMisSubidas() {
+        db.collection("material_docente").where("docente", "==", maestroActivo).onSnapshot(snap => {
+            let h = "<strong>Tus archivos en la nube:</strong><br>";
+            snap.forEach(doc => {
+                h += • ${doc.data().materia}: <a href="${doc.data().archivoUrl}" target="_blank">${doc.data().nombreArchivo}</a><br>;
+            });
+            document.getElementById("mis-subidas").innerHTML = h;
         });
-        alert("Asistencia registrada");
-        document.getElementById('a-lista').value = "";
+    }
+
+    // ASISTENCIAS Y PLANEACIONES
+    async function subirAsistencia() {
+        const lista = document.getElementById("asistencia-lista").value;
+        await db.collection("asistencias").add({
+            maestro: maestroActivo,
+            alumnos: lista,
+            fecha: new Date().toLocaleDateString()
+        });
+        alert("Asistencia guardada");
+        document.getElementById("asistencia-lista").value = "";
+    }
+
+    async function subirPlaneacion() {
+        const texto = document.getElementById("plan-texto").value;
+        await db.collection("planeaciones").add({
+            docente: maestroActivo,
+            contenido: texto,
+            semana: "Reporte Semanal",
+            fecha: new Date().toLocaleString()
+        });
+        alert("Planeación enviada a dirección");
+        document.getElementById("plan-texto").value = "";
     }
 </script>
 </body>
