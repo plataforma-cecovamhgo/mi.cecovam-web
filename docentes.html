@@ -2,151 +2,88 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal Docentes - CECOVAM 2026</title>
+    <title>Portal Docentes CECOVAM</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
     <style>
-        :root { --verde: #27ae60; --azul: #1a2a6c; --rojo: #b21f1f; --gris: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding: 20px; }
-        .container { max-width: 900px; margin: auto; }
-        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        input, textarea, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        .btn { padding: 15px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; transition: 0.3s; width: 100%; }
-        .btn-azul { background: var(--azul); }
-        .btn-verde { background: var(--verde); }
+        body { font-family: sans-serif; background: #f4f7f6; padding: 20px; text-align: center; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); max-width: 400px; margin: auto; }
+        input { width: 90%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; }
+        .btn { padding: 12px; border: none; border-radius: 5px; color: white; cursor: pointer; width: 45%; font-weight: bold; }
+        .btn-azul { background: #1a2a6c; }
+        .btn-verde { background: #27ae60; }
         #panel-docente { display: none; }
-        .grid-docs { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .lista-items { font-size: 13px; background: #f9f9f9; padding: 10px; border-radius: 8px; margin-top: 10px; border-left: 3px solid var(--azul); }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div id="auth-docente" class="card" style="max-width: 450px; margin: 50px auto;">
-        <h2 style="text-align: center;">Acceso Docentes CECOVAM</h2>
-        <input type="text" id="nom-doc" placeholder="Nombre Completo">
-        <input type="password" id="pass-doc" placeholder="Clave Personal">
-        
-        <div style="display: flex; gap: 10px;">
-            <button class="btn btn-azul" onclick="iniciarSesionDocente()">INGRESAR</button>
-            <button class="btn btn-verde" onclick="registrarNuevoDocente()">REGISTRARME</button>
-        </div>
-    </div>
-
-    <div id="panel-docente">
-        <div class="card" style="display: flex; justify-content: space-between; align-items: center;">
-            <h2>Bienvenido(a), <span id="nombre-saludo"></span></h2>
-            <button onclick="location.reload()" style="background:var(--rojo); color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;">Salir</button>
-        </div>
-
-        <div class="grid-docs">
-            <div>
-                <div class="card">
-                    <h3>📚 Mis Materias</h3>
-                    <input type="text" id="nueva-materia" placeholder="Nombre de la Materia">
-                    <button class="btn btn-azul" onclick="agregarMateria()">+ AGREGAR MATERIA</button>
-                    <div id="lista-materias-docente" class="lista-items"></div>
-                </div>
-                <div class="card">
-                    <h3>📤 Subir Archivos/Tareas</h3>
-                    <select id="select-materia-archivo"><option value="">Selecciona Materia</option></select>
-                    <input type="text" id="tit-archivo" placeholder="Título del trabajo">
-                    <input type="file" id="input-archivo">
-                    <button class="btn btn-verde" onclick="subirArchivoClase()">PUBLICAR</button>
-                </div>
-            </div>
-            <div>
-                <div class="card">
-                    <h3>✅ Asistencia</h3>
-                    <textarea id="lista-asistencia" placeholder="Nombres de alumnos..."></textarea>
-                    <button class="btn btn-azul" onclick="guardarAsistencia()">GUARDAR</button>
-                </div>
-            </div>
-        </div>
+<div id="auth-docente" class="card">
+    <h2>Acceso Docentes CECOVAM</h2>
+    <input type="text" id="nom-doc" placeholder="Tu Nombre">
+    <input type="password" id="pass-doc" placeholder="Tu Clave">
+    <div style="display: flex; justify-content: space-between;">
+        <button class="btn btn-azul" onclick="iniciarSesionDocente()">INGRESAR</button>
+        <button class="btn btn-verde" onclick="registrarNuevoDocente()">REGISTRARME</button>
     </div>
 </div>
 
+<div id="panel-docente" class="card">
+    <h2>Bienvenido, <span id="nombre-saludo"></span></h2>
+    <button onclick="location.reload()">Cerrar Sesión</button>
+    <hr>
+    <h3>Área de Materias</h3>
+    <input type="text" id="nueva-materia" placeholder="Nombre de materia">
+    <button onclick="agregarMateria()" style="width:100%; background:#1a2a6c; color:white; padding:10px; border:none; border-radius:5px;">Añadir Materia</button>
+    <div id="lista-materias" style="text-align:left; margin-top:10px;"></div>
+</div>
+
 <script>
-    // ESTA ES LA CONFIGURACIÓN DE TU FOTO
+    // CONFIGURACIÓN EXACTA DE TU PROYECTO
     const firebaseConfig = {
         apiKey: "AIzaSyDJh57e-sBDK0_8VtFn4EwFOyDDsm8v0lc",
         authDomain: "plataforma-cecovam.firebaseapp.com",
         projectId: "plataforma-cecovam",
         storageBucket: "plataforma-cecovam.firebasestorage.app",
         messagingSenderId: "655865798428",
-        appId: "1:655865798428:web:625f020d553385e43d24d9",
-        measurementId: "G-H8HXLDQK8J"
+        appId: "1:655865798428:web:625f020d553385e43d24d9"
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    const storage = firebase.storage();
-
-    let maestroActivo = "";
-
-    async function iniciarSesionDocente() {
-        const n = document.getElementById("nom-doc").value.trim();
-        const c = document.getElementById("pass-doc").value.trim();
-        const doc = await db.collection("usuarios_docentes").doc(n).get();
-        if(doc.exists && doc.data().clave === c) loginExitoso(n);
-        else alert("Usuario o clave incorrectos. Si eres nuevo, dale a REGISTRARME.");
-    }
 
     async function registrarNuevoDocente() {
         const n = document.getElementById("nom-doc").value.trim();
         const c = document.getElementById("pass-doc").value.trim();
-        if(!n || !c) return alert("Llena los campos");
-        await db.collection("usuarios_docentes").doc(n).set({ nombre: n, clave: c });
-        alert("¡Registrado! Ahora ya puedes entrar.");
-        loginExitoso(n);
+        if(!n || !c) return alert("Por favor escribe nombre y clave");
+
+        try {
+            await db.collection("usuarios_docentes").doc(n).set({ nombre: n, clave: c });
+            alert("¡Registro exitoso! Ya puedes entrar.");
+            loginExitoso(n);
+        } catch (error) {
+            alert("Error de Firebase: " + error.message);
+        }
+    }
+
+    async function iniciarSesionDocente() {
+        const n = document.getElementById("nom-doc").value.trim();
+        const c = document.getElementById("pass-doc").value.trim();
+        try {
+            const doc = await db.collection("usuarios_docentes").doc(n).get();
+            if(doc.exists && doc.data().clave === c) {
+                loginExitoso(n);
+            } else {
+                alert("Datos incorrectos o no estás registrado.");
+            }
+        } catch (error) {
+            alert("Error al entrar: " + error.message);
+        }
     }
 
     function loginExitoso(nombre) {
-        maestroActivo = nombre;
         document.getElementById("auth-docente").style.display = "none";
         document.getElementById("panel-docente").style.display = "block";
         document.getElementById("nombre-saludo").innerText = nombre;
-        cargarMaterias();
-    }
-
-    async function agregarMateria() {
-        const mat = document.getElementById("nueva-materia").value.trim();
-        if(!mat) return;
-        await db.collection("materias").add({ nombre: mat, docente: maestroActivo });
-        document.getElementById("nueva-materia").value = "";
-    }
-
-    function cargarMaterias() {
-        db.collection("materias").where("docente", "==", maestroActivo).onSnapshot(snap => {
-            const lista = document.getElementById("lista-materias-docente");
-            const select = document.getElementById("select-materia-archivo");
-            lista.innerHTML = "";
-            select.innerHTML = '<option value="">Selecciona Materia</option>';
-            snap.forEach(doc => {
-                lista.innerHTML += <div>• ${doc.data().nombre}</div>;
-                select.innerHTML += <option value="${doc.data().nombre}">${doc.data().nombre}</option>;
-            });
-        });
-    }
-
-    async function subirArchivoClase() {
-        const file = document.getElementById("input-archivo").files[0];
-        const mat = document.getElementById("select-materia-archivo").value;
-        if(!file || !mat) return alert("Falta archivo o materia");
-        const ref = storage.ref(material/${mat}/${file.name});
-        await ref.put(file);
-        const url = await ref.getDownloadURL();
-        await db.collection("material_docente").add({
-            docente: maestroActivo, materia: mat, titulo: document.getElementById("tit-archivo").value,
-            archivoUrl: url, nombreArchivo: file.name, fecha: new Date().toLocaleString()
-        });
-        alert("¡Subido con éxito!");
-    }
-
-    async function guardarAsistencia() {
-        await db.collection("asistencias").add({ maestro: maestroActivo, alumnos: document.getElementById("lista-asistencia").value, fecha: new Date().toLocaleDateString() });
-        alert("Asistencia guardada");
     }
 </script>
 </body>
