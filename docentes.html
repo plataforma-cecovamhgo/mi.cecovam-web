@@ -13,12 +13,10 @@
         .container { max-width: 900px; margin: auto; }
         .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
         input, textarea, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        .btn { padding: 15px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        .btn-azul { background: var(--azul); width: 100%; }
-        .btn-verde { background: var(--verde); width: 100%; }
-        .btn-rojo { background: var(--rojo); width: 100%; }
+        .btn { padding: 15px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; transition: 0.3s; width: 100%; }
+        .btn-azul { background: var(--azul); }
+        .btn-verde { background: var(--verde); }
         #panel-docente { display: none; }
-        h2, h3 { color: var(--azul); margin-top: 0; }
         .grid-docs { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .lista-items { font-size: 13px; background: #f9f9f9; padding: 10px; border-radius: 8px; margin-top: 10px; border-left: 3px solid var(--azul); }
     </style>
@@ -35,50 +33,35 @@
             <button class="btn btn-azul" onclick="iniciarSesionDocente()">INGRESAR</button>
             <button class="btn btn-verde" onclick="registrarNuevoDocente()">REGISTRARME</button>
         </div>
-        <p style="font-size: 11px; color: #666; text-align: center; margin-top: 15px;">
-            Si es tu primera vez, regístrate. Si ya tienes cuenta, solo ingresa.
-        </p>
     </div>
 
     <div id="panel-docente">
         <div class="card" style="display: flex; justify-content: space-between; align-items: center;">
             <h2>Bienvenido(a), <span id="nombre-saludo"></span></h2>
-            <button onclick="location.reload()" style="background:var(--rojo); color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;">Cerrar Sesión</button>
+            <button onclick="location.reload()" style="background:var(--rojo); color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;">Salir</button>
         </div>
 
         <div class="grid-docs">
             <div>
                 <div class="card">
                     <h3>📚 Mis Materias</h3>
-                    <p>Registra las materias que impartes:</p>
                     <input type="text" id="nueva-materia" placeholder="Nombre de la Materia">
                     <button class="btn btn-azul" onclick="agregarMateria()">+ AGREGAR MATERIA</button>
-                    <div id="lista-materias-docente" class="lista-items">Cargando materias...</div>
+                    <div id="lista-materias-docente" class="lista-items"></div>
                 </div>
-
                 <div class="card">
-                    <h3>📤 Subir Tareas y Archivos</h3>
-                    <select id="select-materia-archivo">
-                        <option value="">Selecciona la Materia</option>
-                    </select>
-                    <input type="text" id="tit-archivo" placeholder="Título (Ej: Tarea 1)">
-                    <textarea id="desc-archivo" placeholder="Instrucciones..."></textarea>
+                    <h3>📤 Subir Archivos/Tareas</h3>
+                    <select id="select-materia-archivo"><option value="">Selecciona Materia</option></select>
+                    <input type="text" id="tit-archivo" placeholder="Título del trabajo">
                     <input type="file" id="input-archivo">
-                    <button class="btn btn-verde" onclick="subirArchivoClase()">PUBLICAR TRABAJO</button>
+                    <button class="btn btn-verde" onclick="subirArchivoClase()">PUBLICAR</button>
                 </div>
             </div>
-
             <div>
                 <div class="card">
-                    <h3>✅ Pasar Lista</h3>
-                    <textarea id="lista-asistencia" placeholder="Nombres de alumnos presentes..." rows="4"></textarea>
-                    <button class="btn btn-azul" onclick="guardarAsistencia()">GUARDAR ASISTENCIA</button>
-                </div>
-
-                <div class="card">
-                    <h3>📑 Planeación Semanal</h3>
-                    <textarea id="texto-planeacion" placeholder="Detalla tu planeación para dirección..." rows="6"></textarea>
-                    <button class="btn btn-azul" onclick="enviarPlaneacion()">ENVIAR A DIRECCIÓN</button>
+                    <h3>✅ Asistencia</h3>
+                    <textarea id="lista-asistencia" placeholder="Nombres de alumnos..."></textarea>
+                    <button class="btn btn-azul" onclick="guardarAsistencia()">GUARDAR</button>
                 </div>
             </div>
         </div>
@@ -86,14 +69,15 @@
 </div>
 
 <script>
-    // CONFIGURACIÓN FIREBASE
+    // ESTA ES LA CONFIGURACIÓN DE TU FOTO
     const firebaseConfig = {
         apiKey: "AIzaSyDJh57e-sBDK0_8VtFn4EwFOyDDsm8v0lc",
         authDomain: "plataforma-cecovam.firebaseapp.com",
         projectId: "plataforma-cecovam",
-        storageBucket: "plataforma-cecovam.appspot.com",
+        storageBucket: "plataforma-cecovam.firebasestorage.app",
         messagingSenderId: "655865798428",
-        appId: "1:655865798428:web:625f020d553385e43d24d9"
+        appId: "1:655865798428:web:625f020d553385e43d24d9",
+        measurementId: "G-H8HXLDQK8J"
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
@@ -101,27 +85,20 @@
 
     let maestroActivo = "";
 
-    // 1. FUNCIONES DE ACCESO
     async function iniciarSesionDocente() {
         const n = document.getElementById("nom-doc").value.trim();
         const c = document.getElementById("pass-doc").value.trim();
-        if(!n || !c) return alert("Completa los campos");
-
         const doc = await db.collection("usuarios_docentes").doc(n).get();
         if(doc.exists && doc.data().clave === c) loginExitoso(n);
-        else alert("Usuario o clave incorrectos");
+        else alert("Usuario o clave incorrectos. Si eres nuevo, dale a REGISTRARME.");
     }
 
     async function registrarNuevoDocente() {
         const n = document.getElementById("nom-doc").value.trim();
         const c = document.getElementById("pass-doc").value.trim();
-        if(!n || !c) return alert("Escribe nombre y clave");
-
-        const doc = await db.collection("usuarios_docentes").doc(n).get();
-        if(doc.exists) return alert("Ya existe este nombre");
-
+        if(!n || !c) return alert("Llena los campos");
         await db.collection("usuarios_docentes").doc(n).set({ nombre: n, clave: c });
-        alert("¡Registro exitoso!");
+        alert("¡Registrado! Ahora ya puedes entrar.");
         loginExitoso(n);
     }
 
@@ -133,10 +110,9 @@
         cargarMaterias();
     }
 
-    // 2. GESTIÓN DE MATERIAS
     async function agregarMateria() {
         const mat = document.getElementById("nueva-materia").value.trim();
-        if(!mat) return alert("Escribe el nombre de la materia");
+        if(!mat) return;
         await db.collection("materias").add({ nombre: mat, docente: maestroActivo });
         document.getElementById("nueva-materia").value = "";
     }
@@ -146,53 +122,31 @@
             const lista = document.getElementById("lista-materias-docente");
             const select = document.getElementById("select-materia-archivo");
             lista.innerHTML = "";
-            select.innerHTML = '<option value="">Selecciona la Materia</option>';
-            
+            select.innerHTML = '<option value="">Selecciona Materia</option>';
             snap.forEach(doc => {
-                const nombre = doc.data().nombre;
-                lista.innerHTML += <div>• ${nombre}</div>;
-                select.innerHTML += <option value="${nombre}">${nombre}</option>;
+                lista.innerHTML += <div>• ${doc.data().nombre}</div>;
+                select.innerHTML += <option value="${doc.data().nombre}">${doc.data().nombre}</option>;
             });
         });
     }
 
-    // 3. SUBIDA DE ARCHIVOS
     async function subirArchivoClase() {
         const file = document.getElementById("input-archivo").files[0];
-        const materia = document.getElementById("select-materia-archivo").value;
-        const titulo = document.getElementById("tit-archivo").value;
-        const desc = document.getElementById("desc-archivo").value;
-
-        if(!file || !materia) return alert("Selecciona materia y archivo");
-
-        alert("Subiendo archivo... por favor espera");
-        const ref = storage.ref(material_docente/${materia}/${file.name});
+        const mat = document.getElementById("select-materia-archivo").value;
+        if(!file || !mat) return alert("Falta archivo o materia");
+        const ref = storage.ref(material/${mat}/${file.name});
         await ref.put(file);
         const url = await ref.getDownloadURL();
-
         await db.collection("material_docente").add({
-            docente: maestroActivo,
-            materia: materia,
-            titulo: titulo,
-            descripcion: desc,
-            archivoUrl: url,
-            nombreArchivo: file.name,
-            fecha: new Date().toLocaleString()
+            docente: maestroActivo, materia: mat, titulo: document.getElementById("tit-archivo").value,
+            archivoUrl: url, nombreArchivo: file.name, fecha: new Date().toLocaleString()
         });
-        alert("¡Material publicado!");
+        alert("¡Subido con éxito!");
     }
 
-    // 4. ASISTENCIA Y PLANEACIÓN
     async function guardarAsistencia() {
-        const lista = document.getElementById("lista-asistencia").value;
-        await db.collection("asistencias").add({ maestro: maestroActivo, alumnos: lista, fecha: new Date().toLocaleDateString() });
+        await db.collection("asistencias").add({ maestro: maestroActivo, alumnos: document.getElementById("lista-asistencia").value, fecha: new Date().toLocaleDateString() });
         alert("Asistencia guardada");
-    }
-
-    async function enviarPlaneacion() {
-        const txt = document.getElementById("texto-planeacion").value;
-        await db.collection("planeaciones").add({ docente: maestroActivo, contenido: txt, fecha: new Date().toLocaleString() });
-        alert("Planeación enviada");
     }
 </script>
 </body>
