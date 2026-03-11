@@ -3,215 +3,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Administrativo - CECOVAM 2026</title>
+    <title>Panel Administrativo - CECOVAM</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <style>
-        :root { --azul: #1a2a6c; --rojo: #b21f1f; --gris: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; }
+        :root { --azul: #1a2a6c; --dorado: #b8952d; --gris: #f4f7f6; --verde: #27ae60; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding: 20px; }
+        .container { max-width: 1100px; margin: auto; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h2 { color: var(--azul); border-bottom: 2px solid var(--dorado); padding-bottom: 10px; margin-top: 0; }
         
-        /* PANTALLA DE ACCESO */
-        #login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--azul); display: flex; justify-content: center; align-items: center; z-index: 10000; }
-        .login-box { background: white; padding: 40px; border-radius: 15px; text-align: center; width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        /* Formulario de Pagos */
+        .form-pagos { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px; }
+        input { padding: 10px; border: 1px solid #ccc; border-radius: 6px; }
+        .btn-pago { background: var(--azul); color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; }
         
-        /* ESTRUCTURA DEL PANEL */
-        #admin-content { display: none; min-height: 100vh; }
-        .sidebar { width: 260px; background: var(--azul); color: white; height: 100vh; position: fixed; padding: 20px; box-sizing: border-box; }
-        .main { margin-left: 260px; padding: 40px; width: calc(100% - 260px); box-sizing: border-box; }
-        
-        /* ELEMENTOS */
-        .section { display: none; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.08); }
-        .active { display: block; }
-        .menu-btn { width: 100%; padding: 15px; margin: 8px 0; border: none; background: transparent; color: white; text-align: left; cursor: pointer; border-radius: 8px; font-size: 15px; transition: 0.3s; }
-        .menu-btn:hover { background: rgba(255,255,255,0.1); border-left: 4px solid var(--rojo); }
-        .card-data { border-left: 5px solid var(--rojo); background: #f9f9f9; padding: 15px; margin-bottom: 15px; border-radius: 8px; position: relative; }
-        .btn-delete { position: absolute; top: 10px; right: 10px; background: none; border: none; cursor: pointer; font-size: 18px; }
-        input, textarea { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 12px; border: 1px solid #eee; text-align: left; }
+        /* Tabla */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; font-size: 14px; }
+        th, td { padding: 12px; text-align: left; border: 1px solid #eee; }
         th { background: var(--azul); color: white; }
-        .btn-descarga { display: inline-block; padding: 8px 15px; background: #27ae60; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 10px; }
+        .monto { font-weight: bold; color: var(--verde); }
     </style>
 </head>
 <body>
 
-<div id="login-screen">
-    <div class="login-box">
-        <h2 style="color: var(--azul);">CECOVAM Admin</h2>
-        <p>Ingrese el código de acceso 2026</p>
-        <input type="password" id="codigoInput" placeholder="Código de Seguridad">
-        <button onclick="verificarCodigo()" style="width:100%; padding:12px; background:var(--rojo); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">INGRESAR AL PANEL</button>
-    </div>
-</div>
-
-<div id="admin-content">
-    <div class="sidebar">
-        <h2 style="text-align: center;">ADMINISTRACIÓN</h2>
-        <button class="menu-btn" onclick="showSection('sec-planeaciones')">📑 Planeaciones</button>
-        <button class="menu-btn" onclick="showSection('sec-asistencias')">✅ Asistencias</button>
-        <button class="menu-btn" onclick="showSection('sec-tareas')">📁 Tareas de Alumnos</button>
-        <button class="menu-btn" onclick="showSection('sec-pagos')">💰 Control de Pagos</button>
-        <button class="menu-btn" onclick="showSection('sec-avisos')">📣 Publicar Avisos</button>
-        <hr style="opacity:0.2; margin: 20px 0;">
-        <button class="menu-btn" onclick="location.reload()" style="color: #ff9f9f;">🚪 Cerrar Sesión</button>
-    </div>
-
-    <div class="main">
-        <div id="sec-tareas" class="section">
-            <h1>Tareas y Archivos Recibidos</h1>
-            <div id="lista-tareas-recibidas">Cargando...</div>
+<div class="container">
+    <div class="card">
+        <h1>Centro Comunitario Valle de Mixquiahuala</h1>
+        <p>Panel de Control Administrativo</p>
+        <hr>
         </div>
 
-        <div id="sec-planeaciones" class="section active">
-            <h1>Planeaciones de Docentes</h1>
-            <div id="lista-planeaciones">Cargando...</div>
+    <div class="card" style="border-top: 5px solid var(--dorado);">
+        <h2>💰 Control de Pagos y Colegiaturas</h2>
+        
+        <div class="form-pagos">
+            <input type="text" id="pago-alumno" placeholder="Nombre del Alumno">
+            <input type="text" id="pago-concepto" placeholder="Concepto (Mensualidad/Inscrip.)">
+            <input type="text" id="pago-detalle" placeholder="Semestre/Bach./Esp.">
+            <input type="date" id="pago-fecha">
+            <input type="number" id="pago-cantidad" placeholder="Cantidad $">
+            <button class="btn-pago" onclick="registrarPago()">GUARDAR</button>
         </div>
 
-        <div id="sec-asistencias" class="section">
-            <h1>Reportes de Asistencia</h1>
-            <div id="lista-asistencias">Cargando...</div>
-        </div>
-
-        <div id="sec-pagos" class="section">
-            <h1>Registrar Nuevo Pago</h1>
-            <div style="display:flex; gap:10px;">
-                <input type="text" id="pagoAlumno" placeholder="Nombre del Alumno">
-                <input type="number" id="pagoMonto" placeholder="Monto $">
-                <button onclick="registrarPago()" style="background:#27ae60; color:white; border:none; padding:10px 20px; border-radius:8px; cursor:pointer; font-weight:bold;">Guardar</button>
-            </div>
+        <div style="overflow-x: auto;">
             <table>
-                <thead><tr><th>Alumno</th><th>Monto</th><th>Fecha</th><th>Acción</th></tr></thead>
-                <tbody id="body-pagos"></tbody>
+                <thead>
+                    <tr>
+                        <th>Alumno</th>
+                        <th>Concepto</th>
+                        <th>Nivel / Especialidad</th>
+                        <th>Fecha Pago</th>
+                        <th>Monto</th>
+                    </tr>
+                </thead>
+                <tbody id="cuerpo-tabla-pagos">
+                    </tbody>
             </table>
-        </div>
-
-        <div id="sec-avisos" class="section">
-            <h1>Publicar Aviso General</h1>
-            <textarea id="textoAviso" rows="5" placeholder="Escribe el aviso..."></textarea>
-            <button onclick="publicarAviso()" style="background:var(--azul); color:white; border:none; padding:12px 30px; border-radius:8px; cursor:pointer;">Publicar Ahora</button>
-            <div id="lista-avisos-historial" style="margin-top:30px;"></div>
         </div>
     </div>
 </div>
 
 <script>
-    // Configuración Firebase
+    // Tu configuración de Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyDJh57e-sBDK0_8VtFn4EwFOyDDsm8v0lc",
         authDomain: "plataforma-cecovam.firebaseapp.com",
         projectId: "plataforma-cecovam",
-        storageBucket: "plataforma-cecovam.appspot.com",
+        storageBucket: "plataforma-cecovam.firebasestorage.app",
         messagingSenderId: "655865798428",
         appId: "1:655865798428:web:625f020d553385e43d24d9"
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // SEGURIDAD REFORZADA 2026
-    function verificarCodigo() {
-        const codigoIngresado = document.getElementById("codigoInput").value.trim();
-        const CODIGO_CORRECTO = "CECOVAM-2026"; // Asegúrate de escribirlo así en la página
-
-        if(codigoIngresado === CODIGO_CORRECTO) {
-            document.getElementById("login-screen").style.display = "none";
-            document.getElementById("admin-content").style.display = "flex";
-        } else {
-            alert("Código incorrecto. Intente con CECOVAM-2026");
-        }
-    }
-
-    function showSection(id) {
-        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-    }
-
-    // ELIMINAR DATOS
-    async function eliminarDato(coleccion, id) {
-        if(confirm("¿Seguro que quieres borrar este registro?")) {
-            await db.collection(coleccion).doc(id).delete();
-        }
-    }
-
-    // CARGAR TAREAS
-    db.collection("actividades_alumnos").orderBy("fecha", "desc").onSnapshot(snap => {
-        const div = document.getElementById("lista-tareas-recibidas");
-        div.innerHTML = "";
-        snap.forEach(doc => {
-            const d = doc.data();
-            div.innerHTML += `
-                <div class="card-data">
-                    <button class="btn-delete" onclick="eliminarDato('actividades_alumnos', '${doc.id}')">🗑️</button>
-                    <strong>Alumno:</strong> ${d.alumno} | <strong>Materia:</strong> ${d.materia}<br>
-                    <p>"${d.comentario}"</p>
-                    <a href="${d.archivoUrl}" target="_blank" class="btn-descarga">📄 Descargar Tarea</a>
-                </div>`;
-        });
-    });
-
-    // CARGAR PLANEACIONES
-    db.collection("planeaciones").onSnapshot(snap => {
-        let h = ""; 
-        snap.forEach(doc => { 
-            h += `<div class="card-data">
-                    <button class="btn-delete" onclick="eliminarDato('planeaciones', '${doc.id}')">🗑️</button>
-                    <strong>${doc.data().docente}:</strong> ${doc.data().semana}<p>${doc.data().contenido}</p>
-                  </div>` 
-        });
-        document.getElementById("lista-planeaciones").innerHTML = h;
-    });
-
-    // CARGAR ASISTENCIAS
-    db.collection("asistencias").onSnapshot(snap => {
-        let h = ""; 
-        snap.forEach(doc => { 
-            h += `<div class="card-data">
-                    <button class="btn-delete" onclick="eliminarDato('asistencias', '${doc.id}')">🗑️</button>
-                    <strong>${doc.data().fecha}:</strong> ${doc.data().alumnos}
-                  </div>` 
-        });
-        document.getElementById("lista-asistencias").innerHTML = h;
-    });
-
-    // REGISTRAR PAGOS
+    // Función para registrar pagos
     async function registrarPago() {
-        const a = document.getElementById("pagoAlumno").value;
-        const m = document.getElementById("pagoMonto").value;
-        if(!a || !m) return alert("Completa los campos");
-        await db.collection("pagos").add({ alumno: a, monto: m, fecha: new Date().toLocaleDateString() });
-        document.getElementById("pagoAlumno").value = ""; document.getElementById("pagoMonto").value = "";
-    }
+        const alumno = document.getElementById("pago-alumno").value;
+        const concepto = document.getElementById("pago-concepto").value;
+        const detalle = document.getElementById("pago-detalle").value;
+        const fecha = document.getElementById("pago-fecha").value;
+        const cantidad = document.getElementById("pago-cantidad").value;
 
-    db.collection("pagos").onSnapshot(snap => {
-        let h = ""; 
-        snap.forEach(doc => { 
-            h += `<tr>
-                    <td>${doc.data().alumno}</td>
-                    <td>$${doc.data().monto}</td>
-                    <td>${doc.data().fecha}</td>
-                    <td><button onclick="eliminarDato('pagos', '${doc.id}')">❌</button></td>
-                  </tr>` 
+        if(!alumno || !cantidad || !fecha) return alert("Completa: Alumno, Fecha y Cantidad");
+
+        await db.collection("pagos").add({
+            alumno: alumno,
+            concepto: concepto,
+            detalle: detalle,
+            fecha: fecha,
+            cantidad: Number(cantidad),
+            creado: new Date()
         });
-        document.getElementById("body-pagos").innerHTML = h;
-    });
-
-    // AVISOS
-    async function publicarAviso() {
-        const txt = document.getElementById("textoAviso").value;
-        if(!txt) return alert("Escribe un mensaje");
-        await db.collection("avisos").add({ mensaje: txt, fecha: new Date().toLocaleString() });
-        document.getElementById("textoAviso").value = "";
+        
+        alert("Pago registrado");
+        // Limpiar solo algunos campos para rapidez
+        document.getElementById("pago-alumno").value = "";
+        document.getElementById("pago-cantidad").value = "";
     }
 
-    db.collection("avisos").onSnapshot(snap => {
-        let h = "<h3>Historial de Avisos:</h3>";
+    // Escuchar pagos en tiempo real
+    db.collection("pagos").orderBy("fecha", "desc").onSnapshot(snap => {
+        const tabla = document.getElementById("cuerpo-tabla-pagos");
+        tabla.innerHTML = "";
         snap.forEach(doc => {
-            h += `<div class="card-data">
-                    <button class="btn-delete" onclick="eliminarDato('avisos', '${doc.id}')">🗑️</button>
-                    ${doc.data().mensaje} <br><small>${doc.data().fecha}</small>
-                  </div>`;
+            const p = doc.data();
+            tabla.innerHTML += `
+                <tr>
+                    <td>${p.alumno}</td>
+                    <td>${p.concepto}</td>
+                    <td>${p.detalle}</td>
+                    <td>${p.fecha}</td>
+                    <td class="monto">$${p.cantidad}</td>
+                </tr>
+            `;
         });
-        document.getElementById("lista-avisos-historial").innerHTML = h;
     });
 </script>
+
 </body>
 </html>
