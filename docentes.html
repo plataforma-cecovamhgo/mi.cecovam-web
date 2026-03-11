@@ -2,55 +2,63 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Portal Docentes CECOVAM - Recuperación de Datos</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Docentes - CECOVAM</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
     <style>
-        :root { --azul: #1a2a6c; --verde: #27ae60; --gris: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--gris); padding: 20px; }
-        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        th { background-color: var(--azul); color: white; }
-        .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; color: white; font-weight: bold; }
-        #panel-datos { display: none; }
+        :root { --azul: #1a2a6c; --verde: #27ae60; --rojo: #b21f1f; --gris: #f4f7f6; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: auto; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        input, textarea, select { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+        .btn { padding: 12px; border: none; border-radius: 6px; color: white; cursor: pointer; font-weight: bold; width: 100%; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: var(--azul); color: white; }
+        .item-viejo { background: #f9f9f9; padding: 8px; border-left: 3px solid var(--verde); margin-bottom: 5px; font-size: 13px; }
+        @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 
-<div id="login-area" class="card" style="max-width: 400px; margin: auto;">
-    <h2>Acceso Docentes</h2>
-    <input type="text" id="usuario" placeholder="Nombre" style="width:90%; padding:10px; margin:5px;">
-    <input type="password" id="clave" placeholder="Contraseña" style="width:90%; padding:10px; margin:5px;">
-    <button class="btn" style="background: var(--verde); width: 100%;" onclick="entrar()">ENTRAR AL PANEL</button>
-</div>
-
-<div id="panel-datos">
-    <div class="card">
-        <h1>Centro Comunitario Valle de Mixquiahuala</h1>
-        <p>Docente: <strong id="user-display"></strong></p>
+<div class="container">
+    <div class="card" style="display: flex; justify-content: space-between; align-items: center; background: var(--azul); color: white;">
+        <h2 style="margin:0;">CECOVAM - Panel Docente</h2>
+        <div>
+            <span>Bienvenido: <strong id="user-name">jesus ceron</strong></span>
+            <button onclick="location.reload()" style="margin-left:10px; background:var(--rojo); color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">Salir</button>
+        </div>
     </div>
 
-    <div class="card">
-        <h3>📋 Historial de Planeaciones Anteriores</h3>
-        <table id="tabla-planeaciones">
-            <thead>
-                <tr>
-                    <th>Fecha</th>
-                    <th>Materia</th>
-                    <th>Planeación / Actividad</th>
-                </tr>
-            </thead>
-            <tbody id="cuerpo-planeaciones">
-                </tbody>
-        </table>
-    </div>
+    <div class="grid">
+        <div>
+            <div class="card">
+                <h3>📝 Nueva Planeación</h3>
+                <input type="text" id="materia-plan" placeholder="Nombre de la Materia">
+                <textarea id="texto-plan" rows="5" placeholder="Escribe aquí las actividades de la semana..."></textarea>
+                <button class="btn" style="background: var(--azul);" onclick="guardarPlan()">Guardar Planeación</button>
+            </div>
 
-    <div class="card">
-        <h3>✅ Registro de Asistencias Previas</h3>
-        <div id="lista-asistencias" style="background: #f9f9f9; padding: 15px; border-radius: 8px;">
-            Cargando historial de pases de lista...
+            <div class="card">
+                <h3>✅ Pase de Lista</h3>
+                <textarea id="texto-lista" rows="4" placeholder="Nombres de alumnos presentes..."></textarea>
+                <button class="btn" style="background: var(--verde);" onclick="guardarAsistencia()">Registrar Asistencia</button>
+            </div>
+        </div>
+
+        <div>
+            <div class="card">
+                <h3>📂 Historial de Planeaciones</h3>
+                <div id="historial-plan">Buscando datos anteriores...</div>
+            </div>
+
+            <div class="card">
+                <h3>📊 Registros de Asistencia</h3>
+                <div id="historial-asistencia">Cargando pases de lista...</div>
+            </div>
         </div>
     </div>
 </div>
@@ -67,41 +75,28 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    function entrar() {
-        const user = document.getElementById('usuario').value;
-        if(user) {
-            document.getElementById('login-area').style.display = 'none';
-            document.getElementById('panel-datos').style.display = 'block';
-            document.getElementById('user-display').innerText = user;
-            recuperarTodo();
-        }
+    // Función para guardar lo nuevo
+    async function guardarPlan() {
+        const mat = document.getElementById("materia-plan").value;
+        const txt = document.getElementById("texto-plan").value;
+        if(!mat || !txt) return alert("Llena los campos");
+        await db.collection("planeaciones").add({
+            docente: "jesus ceron", materia: mat, contenido: txt, fecha: new Date().toLocaleString()
+        });
+        alert("Planeación guardada");
+        document.getElementById("texto-plan").value = "";
     }
 
-    async function recuperarTodo() {
-        // 1. Recuperar Planeaciones (buscando en la colección 'planeaciones')
-        db.collection("planeaciones").orderBy("fecha", "desc").onSnapshot(snap => {
-            const tabla = document.getElementById("cuerpo-planeaciones");
-            tabla.innerHTML = "";
-            snap.forEach(doc => {
-                const d = doc.data();
-                tabla.innerHTML += `<tr>
-                    <td>${d.fecha || 'S/F'}</td>
-                    <td>${d.materia || 'General'}</td>
-                    <td>${d.contenido || d.actividad || 'Ver detalle'}</td>
-                </tr>`;
-            });
+    async function guardarAsistencia() {
+        const lista = document.getElementById("texto-lista").value;
+        if(!lista) return alert("Escribe la lista");
+        await db.collection("asistencias").add({
+            maestro: "jesus ceron", alumnos: lista, fecha: new Date().toLocaleDateString()
         });
-
-        // 2. Recuperar Asistencias (buscando en la colección 'asistencias')
-        db.collection("asistencias").onSnapshot(snap => {
-            const div = document.getElementById("lista-asistencias");
-            div.innerHTML = "";
-            snap.forEach(doc => {
-                const d = doc.data();
-                div.innerHTML += <p>📍 <strong>${d.fecha}:</strong> ${d.alumnos || 'Registro vacío'}</p>;
-            });
-        });
+        alert("Asistencia registrada");
+        document.getElementById("texto-lista").value = "";
     }
-</script>
-</body>
-</html>
+
+    // ESTA PARTE RECUPERA LOS DATOS QUE YA TENÍAN
+    function cargarDatosViejos() {
+        // Cargar Planeaciones
