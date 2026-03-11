@@ -10,50 +10,70 @@
         :root { --azul: #1a2a6c; --dorado: #b8952d; --gris: #f4f7f6; --verde: #27ae60; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding: 20px; }
         .container { max-width: 1100px; margin: auto; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        h2 { color: var(--azul); border-bottom: 2px solid var(--dorado); padding-bottom: 10px; margin-top: 0; }
+        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h1 { color: var(--azul); margin: 0; text-align: center; font-size: 22px; }
+        h2 { color: var(--azul); border-bottom: 2px solid var(--dorado); padding-bottom: 8px; margin-top: 0; font-size: 18px; }
+        
+        /* Estilos de Tablas */
+        .tabla-container { overflow-x: auto; margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; background: white; min-width: 600px; margin-bottom: 20px; }
+        th, td { padding: 12px; text-align: left; border: 1px solid #eee; font-size: 14px; }
+        th { background: var(--azul); color: white; }
         
         /* Formulario de Pagos */
         .form-pagos { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px; }
-        input { padding: 10px; border: 1px solid #ccc; border-radius: 6px; }
+        input { padding: 10px; border: 1px solid #ccc; border-radius: 6px; outline: none; }
         .btn-pago { background: var(--azul); color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; }
         
-        /* Tabla */
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; font-size: 14px; }
-        th, td { padding: 12px; text-align: left; border: 1px solid #eee; }
-        th { background: var(--azul); color: white; }
         .monto { font-weight: bold; color: var(--verde); }
+        .badge { background: #e8f5e9; color: #2e7d32; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="card">
-        <h1>Centro Comunitario Valle de Mixquiahuala</h1>
-        <p>Panel de Control Administrativo</p>
-        <hr>
+        <h1>(CECOVAM) CENTRO DE ESTUDIOS COMPUTACIONALES DEL VALLE DE MÉXICO</h1>
+        <p style="text-align: center; color: var(--dorado); font-weight: bold; margin-top: 5px;">PANEL DE CONTROL ADMINISTRATIVO</p>
+    </div>
+
+    <div class="card">
+        <h2>📂 Seguimiento de Docentes (Planeaciones y Asistencia)</h2>
+        <div class="tabla-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Docente</th>
+                        <th>Materia / Actividad</th>
+                        <th>Tipo</th>
+                    </tr>
+                </thead>
+                <tbody id="cuerpo-tabla-docentes">
+                    </tbody>
+            </table>
         </div>
+    </div>
 
     <div class="card" style="border-top: 5px solid var(--dorado);">
-        <h2>💰 Control de Pagos y Colegiaturas</h2>
-        
+        <h2>💰 Registro y Control de Pagos</h2>
         <div class="form-pagos">
             <input type="text" id="pago-alumno" placeholder="Nombre del Alumno">
-            <input type="text" id="pago-concepto" placeholder="Concepto (Mensualidad/Inscrip.)">
-            <input type="text" id="pago-detalle" placeholder="Semestre/Bach./Esp.">
+            <input type="text" id="pago-concepto" placeholder="Concepto (Mensualidad, etc.)">
+            <input type="text" id="pago-detalle" placeholder="Semestre/Bachillerato/Esp.">
             <input type="date" id="pago-fecha">
             <input type="number" id="pago-cantidad" placeholder="Cantidad $">
-            <button class="btn-pago" onclick="registrarPago()">GUARDAR</button>
+            <button class="btn-pago" onclick="registrarPago()">REGISTRAR PAGO</button>
         </div>
 
-        <div style="overflow-x: auto;">
+        <div class="tabla-container">
             <table>
                 <thead>
                     <tr>
                         <th>Alumno</th>
                         <th>Concepto</th>
                         <th>Nivel / Especialidad</th>
-                        <th>Fecha Pago</th>
+                        <th>Fecha de Pago</th>
                         <th>Monto</th>
                     </tr>
                 </thead>
@@ -65,7 +85,7 @@
 </div>
 
 <script>
-    // Tu configuración de Firebase
+    // Configuración de tu proyecto
     const firebaseConfig = {
         apiKey: "AIzaSyDJh57e-sBDK0_8VtFn4EwFOyDDsm8v0lc",
         authDomain: "plataforma-cecovam.firebaseapp.com",
@@ -77,7 +97,38 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // Función para registrar pagos
+    // --- LÓGICA DE DOCENTES (LO QUE YA TENÍAS) ---
+    function cargarDatosDocentes() {
+        const tabla = document.getElementById("cuerpo-tabla-docentes");
+        
+        // Cargar Planeaciones
+        db.collection("planeaciones").orderBy("fecha", "desc").onSnapshot(snap => {
+            snap.forEach(doc => {
+                const d = doc.data();
+                tabla.innerHTML += `<tr>
+                    <td>${d.fecha}</td>
+                    <td><b>${d.docente}</b></td>
+                    <td>${d.materia}: ${d.contenido.substring(0, 50)}...</td>
+                    <td><span class="badge">PLANEACIÓN</span></td>
+                </tr>`;
+            });
+        });
+
+        // Cargar Asistencias
+        db.collection("asistencias").orderBy("fecha", "desc").onSnapshot(snap => {
+            snap.forEach(doc => {
+                const d = doc.data();
+                tabla.innerHTML += `<tr>
+                    <td>${d.fecha}</td>
+                    <td><b>${d.maestro}</b></td>
+                    <td>Registro de alumnos: ${d.alumnos.substring(0, 30)}...</td>
+                    <td><span class="badge" style="background:#e3f2fd; color:#1565c0;">ASISTENCIA</span></td>
+                </tr>`;
+            });
+        });
+    }
+
+    // --- LÓGICA DE PAGOS (LO NUEVO) ---
     async function registrarPago() {
         const alumno = document.getElementById("pago-alumno").value;
         const concepto = document.getElementById("pago-concepto").value;
@@ -85,40 +136,35 @@
         const fecha = document.getElementById("pago-fecha").value;
         const cantidad = document.getElementById("pago-cantidad").value;
 
-        if(!alumno || !cantidad || !fecha) return alert("Completa: Alumno, Fecha y Cantidad");
+        if(!alumno || !cantidad || !fecha) return alert("Completa los campos principales");
 
         await db.collection("pagos").add({
-            alumno: alumno,
-            concepto: concepto,
-            detalle: detalle,
-            fecha: fecha,
-            cantidad: Number(cantidad),
-            creado: new Date()
+            alumno: alumno, concepto: concepto, detalle: detalle,
+            fecha: fecha, cantidad: Number(cantidad), registro: new Date()
         });
         
-        alert("Pago registrado");
-        // Limpiar solo algunos campos para rapidez
+        alert("Pago guardado");
         document.getElementById("pago-alumno").value = "";
         document.getElementById("pago-cantidad").value = "";
     }
 
-    // Escuchar pagos en tiempo real
     db.collection("pagos").orderBy("fecha", "desc").onSnapshot(snap => {
         const tabla = document.getElementById("cuerpo-tabla-pagos");
         tabla.innerHTML = "";
         snap.forEach(doc => {
             const p = doc.data();
-            tabla.innerHTML += `
-                <tr>
-                    <td>${p.alumno}</td>
-                    <td>${p.concepto}</td>
-                    <td>${p.detalle}</td>
-                    <td>${p.fecha}</td>
-                    <td class="monto">$${p.cantidad}</td>
-                </tr>
-            `;
+            tabla.innerHTML += `<tr>
+                <td>${p.alumno}</td>
+                <td>${p.concepto}</td>
+                <td>${p.detalle}</td>
+                <td>${p.fecha}</td>
+                <td class="monto">$${p.cantidad}</td>
+            </tr>`;
         });
     });
+
+    // Iniciar carga de datos de maestros
+    cargarDatosDocentes();
 </script>
 
 </body>
