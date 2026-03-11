@@ -10,16 +10,14 @@
     <style>
         :root { --azul: #1a2a6c; --verde: #27ae60; --rojo: #b21f1f; --gris: #f4f7f6; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding: 20px; }
-        .container { max-width: 1000px; margin: auto; }
+        .container { max-width: 1100px; margin: auto; }
         .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
         input, textarea, select { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
-        .btn { padding: 12px; border: none; border-radius: 6px; color: white; cursor: pointer; font-weight: bold; width: 100%; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background: var(--azul); color: white; }
-        .item-viejo { background: #f9f9f9; padding: 8px; border-left: 3px solid var(--verde); margin-bottom: 5px; font-size: 13px; }
-        @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
+        .btn { padding: 12px; border: none; border-radius: 6px; color: white; cursor: pointer; font-weight: bold; width: 100%; margin-top: 5px; }
+        .item-historial { background: #fff; padding: 10px; border-left: 4px solid var(--azul); margin-bottom: 10px; border-radius: 4px; font-size: 13px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        h3 { color: var(--azul); border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 0; }
+        @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
@@ -27,37 +25,44 @@
 <div class="container">
     <div class="card" style="display: flex; justify-content: space-between; align-items: center; background: var(--azul); color: white;">
         <h2 style="margin:0;">CECOVAM - Panel Docente</h2>
-        <div>
-            <span>Bienvenido: <strong id="user-name">jesus ceron</strong></span>
-            <button onclick="location.reload()" style="margin-left:10px; background:var(--rojo); color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">Salir</button>
-        </div>
+        <button onclick="location.reload()" style="background:var(--rojo); color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer; font-weight:bold;">Cerrar Sesión</button>
     </div>
 
     <div class="grid">
         <div>
             <div class="card">
-                <h3>📝 Nueva Planeación</h3>
-                <input type="text" id="materia-plan" placeholder="Nombre de la Materia">
-                <textarea id="texto-plan" rows="5" placeholder="Escribe aquí las actividades de la semana..."></textarea>
-                <button class="btn" style="background: var(--azul);" onclick="guardarPlan()">Guardar Planeación</button>
+                <h3>📚 Mis Materias</h3>
+                <input type="text" id="nueva-materia" placeholder="Nombre de la materia">
+                <button class="btn" style="background: var(--azul);" onclick="agregarMateria()">+ Guardar Materia</button>
+                <div id="lista-materias-viva" style="margin-top:10px; font-size: 13px;"></div>
             </div>
-
             <div class="card">
                 <h3>✅ Pase de Lista</h3>
-                <textarea id="texto-lista" rows="4" placeholder="Nombres de alumnos presentes..."></textarea>
-                <button class="btn" style="background: var(--verde);" onclick="guardarAsistencia()">Registrar Asistencia</button>
+                <textarea id="texto-lista" rows="3" placeholder="Alumnos presentes hoy..."></textarea>
+                <button class="btn" style="background: var(--azul);" onclick="guardarAsistencia()">Registrar Lista</button>
             </div>
         </div>
 
         <div>
             <div class="card">
-                <h3>📂 Historial de Planeaciones</h3>
-                <div id="historial-plan">Buscando datos anteriores...</div>
+                <h3>📑 Planeación Semanal</h3>
+                <select id="select-materia-plan"><option value="">Seleccionar Materia</option></select>
+                <textarea id="texto-plan" rows="4" placeholder="Temas y objetivos de la semana..."></textarea>
+                <button class="btn" style="background: var(--azul);" onclick="guardarPlan()">Guardar Planeación</button>
             </div>
+            <div class="card" style="border-top: 5px solid var(--verde);">
+                <h3>📤 Subir Tarea (Alumnos)</h3>
+                <select id="select-materia-tarea"><option value="">Materia de la tarea</option></select>
+                <input type="text" id="titulo-tarea" placeholder="Título (Ej: Tarea 1)">
+                <input type="file" id="archivo-tarea">
+                <button class="btn" style="background: var(--verde);" onclick="subirTarea()">PUBLICAR TAREA</button>
+            </div>
+        </div>
 
+        <div>
             <div class="card">
-                <h3>📊 Registros de Asistencia</h3>
-                <div id="historial-asistencia">Cargando pases de lista...</div>
+                <h3>📂 Historial y Archivos</h3>
+                <div id="historial-combinado">Cargando registros anteriores...</div>
             </div>
         </div>
     </div>
@@ -74,29 +79,20 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+    const storage = firebase.storage();
 
-    // Función para guardar lo nuevo
-    async function guardarPlan() {
-        const mat = document.getElementById("materia-plan").value;
-        const txt = document.getElementById("texto-plan").value;
-        if(!mat || !txt) return alert("Llena los campos");
-        await db.collection("planeaciones").add({
-            docente: "jesus ceron", materia: mat, contenido: txt, fecha: new Date().toLocaleString()
-        });
-        alert("Planeación guardada");
-        document.getElementById("texto-plan").value = "";
+    // MATERIAS
+    async function agregarMateria() {
+        const m = document.getElementById("nueva-materia").value.trim();
+        if(!m) return;
+        await db.collection("materias").add({ nombre: m, docente: "jesus ceron" });
+        document.getElementById("nueva-materia").value = "";
     }
 
-    async function guardarAsistencia() {
-        const lista = document.getElementById("texto-lista").value;
-        if(!lista) return alert("Escribe la lista");
-        await db.collection("asistencias").add({
-            maestro: "jesus ceron", alumnos: lista, fecha: new Date().toLocaleDateString()
-        });
-        alert("Asistencia registrada");
-        document.getElementById("texto-lista").value = "";
-    }
-
-    // ESTA PARTE RECUPERA LOS DATOS QUE YA TENÍAN
-    function cargarDatosViejos() {
-        // Cargar Planeaciones
+    function cargarMaterias() {
+        db.collection("materias").onSnapshot(snap => {
+            const list = document.getElementById("lista-materias-viva");
+            const sel1 = document.getElementById("select-materia-plan");
+            const sel2 = document.getElementById("select-materia-tarea");
+            list.innerHTML = "";
+            sel1.innerHTML = sel2
