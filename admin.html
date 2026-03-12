@@ -6,37 +6,40 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <style>
-        body { font-family: sans-serif; background: #f0f2f5; padding: 20px; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        h1 { color: #1a2a6c; text-align: center; }
+        body { font-family: sans-serif; background: #f0f2f5; padding: 20px; margin: 0; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h1 { color: #1a2a6c; text-align: center; margin: 0 0 10px 0; }
+        #conexion { text-align: center; font-weight: bold; padding: 15px; border-radius: 8px; margin-bottom: 20px; transition: 0.3s; }
         table { width: 100%; border-collapse: collapse; background: white; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; font-size: 13px; }
+        th, td { border: 1px solid #eee; padding: 12px; text-align: left; font-size: 13px; }
         th { background: #1a2a6c; color: white; }
-        .btn-ver { background: #27ae60; color: white; padding: 5px 10px; text-decoration: none; border-radius: 4px; font-weight: bold; }
-        #conexion { text-align: center; font-weight: bold; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
+        .btn-abrir { background: #27ae60; color: white; padding: 6px 12px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block; }
+        tr:hover { background: #f9f9f9; }
     </style>
 </head>
 <body>
 
     <div class="card">
         <h1>CECOVAM - PANEL DE CONTROL</h1>
-        <div id="conexion" style="background: #fff3cd; color: #856404;">🔌 Intentando establecer conexión directa...</div>
+        <div id="conexion" style="background: #fff3cd; color: #856404;">🔄 Buscando información en la base de datos...</div>
     </div>
 
     <div class="card">
-        <h2>📂 Registro de Actividades (Tareas y Planeaciones)</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Fecha</th>
-                    <th>Docente</th>
-                    <th>Materia / Actividad</th>
-                    <th>Tipo</th>
-                    <th>Archivo</th>
-                </tr>
-            </thead>
-            <tbody id="tabla-datos"></tbody>
-        </table>
+        <h2 style="color: #1a2a6c; font-size: 18px;">📂 Registro de Actividades</h2>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Docente</th>
+                        <th>Materia / Actividad</th>
+                        <th>Tipo</th>
+                        <th>Archivo</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-datos"></tbody>
+            </table>
+        </div>
     </div>
 
     <script>
@@ -49,37 +52,58 @@
             appId: "1:655865798428:web:625f020d553385e43d24d9"
         };
 
-        // Iniciar Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-
-        // Confirmar conexión
-        document.getElementById('conexion').innerText = "✅ CONEXIÓN EXITOSA - BUSCANDO DATOS...";
-        document.getElementById('conexion').style.background = "#d4edda";
-        document.getElementById('conexion').style.color = "#155724";
+        const status = document.getElementById('conexion');
+        const tabla = document.getElementById('tabla-datos');
 
         function agregarFila(doc, tipo, color) {
-            const data = doc.data();
-            const tabla = document.getElementById('tabla-datos');
-            const url = data.urlArchivo || data.archivo || data.link || "";
-            const boton = url ? <a href="${url}" target="_blank" class="btn-ver">ABRIR</a> : "---";
+            const d = doc.data();
+            const url = d.urlArchivo || d.archivo || d.link || "";
+            const boton = url ? <a href="${url}" target="_blank" class="btn-abrir">VER TRABAJO</a> : "<span style='color:gray'>Sin archivo</span>";
 
-            const fila = tabla.insertRow();
-            fila.innerHTML = `
-                <td>${data.fecha || '---'}</td>
-                <td><b>${data.docente || data.maestro || '---'}</b></td>
-                <td>${data.materia || data.titulo || data.contenido || '---'}</td>
+            const fila = `<tr>
+                <td>${d.fecha || '---'}</td>
+                <td><b>${d.docente || d.maestro || d.nombre || '---'}</b></td>
+                <td>${d.materia || d.titulo || d.actividad || '---'}</td>
                 <td style="color:${color}; font-weight:bold;">${tipo}</td>
                 <td>${boton}</td>
-            `;
+            </tr>`;
+            tabla.innerHTML += fila;
+            
+            // Si entra aquí, es que hay datos
+            status.innerText = "✅ DATOS CARGADOS CORRECTAMENTE";
+            status.style.background = "#d4edda";
+            status.style.color = "#155724";
         }
 
-        // Cargar todas las colecciones una por una
-        db.collection("tareas_alumnos").get().then(snap => snap.forEach(doc => agregarFila(doc, "TAREA", "#27ae60")));
-        db.collection("material_docente").get().then(snap => snap.forEach(doc => agregarFila(doc, "TRABAJO", "#34495e")));
-        db.collection("planeaciones").get().then(snap => snap.forEach(doc => agregarFila(doc, "PLAN", "#f39c12")));
-        db.collection("asistencias").get().then(snap => snap.forEach(doc => agregarFila(doc, "LISTA", "#2980b9")));
+        // Intento de carga masiva
+        const colecciones = [
+            { id: "tareas_alumnos", n: "TAREA", c: "#27ae60" },
+            { id: "material_docente", n: "TRABAJO", c: "#34495e" },
+            { id: "planeaciones", n: "PLAN", c: "#f39c12" },
+            { id: "asistencias", n: "LISTA", c: "#2980b9" }
+        ];
 
+        colecciones.forEach(col => {
+            db.collection(col.id).get().then(snap => {
+                if(!snap.empty) {
+                    snap.forEach(doc => agregarFila(doc, col.n, col.c));
+                }
+            }).catch(e => {
+                console.log("Error en " + col.id, e);
+                status.innerText = "⚠️ Error de permisos. Revisa las reglas de Firebase.";
+                status.style.background = "#f8d7da";
+                status.style.color = "#721c24";
+            });
+        });
+
+        // Si después de 5 segundos sigue igual, avisar
+        setTimeout(() => {
+            if (tabla.innerHTML === "") {
+                status.innerText = "❌ No se encontraron datos. Verifica el nombre de las colecciones en Firebase.";
+            }
+        }, 5000);
     </script>
 </body>
 </html>
