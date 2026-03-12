@@ -16,11 +16,11 @@
         .form-flex { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
         input, textarea { padding: 10px; border: 1px solid #ccc; border-radius: 6px; flex: 1; min-width: 150px; }
         .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; color: white; }
-        table { width: 100%; border-collapse: collapse; background: white; }
-        th, td { padding: 12px; text-align: left; border: 1px solid #eee; font-size: 13px; }
+        table { width: 100%; border-collapse: collapse; background: white; margin-top: 10px; }
+        th, td { padding: 10px; text-align: left; border: 1px solid #eee; font-size: 12px; }
         th { background: var(--azul); color: white; }
-        .badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 10px; color: white; text-transform: uppercase; }
-        .btn-ver { background: var(--verde); color: white; text-decoration: none; padding: 5px 10px; border-radius: 4px; font-size: 11px; }
+        .badge { padding: 3px 6px; border-radius: 4px; font-weight: bold; font-size: 10px; color: white; }
+        .btn-link { color: #27ae60; font-weight: bold; text-decoration: none; border: 1px solid #27ae60; padding: 2px 5px; border-radius: 4px; }
     </style>
 </head>
 <body>
@@ -31,30 +31,23 @@
     </div>
 
     <div class="card" style="border-left: 8px solid var(--rojo);">
-        <h2>📢 Tablón de Avisos Generales</h2>
+        <h2>📢 Tablón de Avisos</h2>
         <div class="form-flex">
             <input type="text" id="titulo-aviso" placeholder="Título">
-            <textarea id="texto-aviso" placeholder="Escribe el aviso..."></textarea>
+            <textarea id="texto-aviso" placeholder="Mensaje..."></textarea>
             <button class="btn" style="background: var(--rojo);" onclick="publicarAviso()">PUBLICAR</button>
         </div>
-        <div id="historial-avisos" style="font-size: 12px; border-top: 1px solid #eee; padding-top: 10px;"></div>
+        <div id="historial-avisos"></div>
     </div>
 
     <div class="card">
-        <h2>📂 Supervisión Docente (Tareas, Planeaciones y Asistencia)</h2>
-        <div style="overflow-x: auto; max-height: 500px;">
+        <h2>📂 Supervisión de Docentes y Tareas</h2>
+        <div style="overflow-x: auto;">
             <table>
                 <thead>
-                    <tr>
-                        <th>Fecha</th>
-                        <th>Docente</th>
-                        <th>Actividad / Materia</th>
-                        <th>Tipo</th>
-                        <th>Acción</th>
-                    </tr>
+                    <tr><th>Fecha</th><th>Docente</th><th>Detalle / Materia</th><th>Tipo</th><th>Archivo</th></tr>
                 </thead>
-                <tbody id="tabla-supervision">
-                    </tbody>
+                <tbody id="tabla-supervision"></tbody>
             </table>
         </div>
     </div>
@@ -64,19 +57,15 @@
         <div class="form-flex">
             <input type="text" id="pago-alumno" placeholder="Alumno">
             <input type="text" id="pago-concepto" placeholder="Concepto">
-            <input type="text" id="pago-detalle" placeholder="Nivel/Semestre">
+            <input type="text" id="pago-detalle" placeholder="Nivel">
             <input type="date" id="pago-fecha">
-            <input type="number" id="pago-cantidad" placeholder="$ Cantidad">
-            <button class="btn" style="background: var(--azul);" onclick="registrarPago()">GUARDAR PAGO</button>
+            <input type="number" id="pago-cantidad" placeholder="$">
+            <button class="btn" style="background: var(--azul);" onclick="registrarPago()">GUARDAR</button>
         </div>
-        <div style="overflow-x: auto;">
-            <table>
-                <thead>
-                    <tr><th>Alumno</th><th>Concepto</th><th>Nivel</th><th>Fecha</th><th>Monto</th></tr>
-                </thead>
-                <tbody id="tabla-pagos"></tbody>
-            </table>
-        </div>
+        <table>
+            <thead><tr><th>Alumno</th><th>Concepto</th><th>Fecha</th><th>Monto</th></tr></thead>
+            <tbody id="tabla-pagos"></tbody>
+        </table>
     </div>
 </div>
 
@@ -92,50 +81,70 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // 1. CARGAR AVISOS
+    // Función universal para leer cualquier dato
+    function escucharColeccion(nombreColeccion, tipo, color) {
+        db.collection(nombreColeccion).onSnapshot(snap => {
+            snap.forEach(doc => {
+                const d = doc.data();
+                const tabla = document.getElementById("tabla-supervision");
+                const link = d.urlArchivo || d.archivo || d.link;
+                const btn = link ? <a href="${link}" target="_blank" class="btn-link">VER TAREA</a> : "---";
+                
+                tabla.innerHTML += `<tr>
+                    <td>${d.fecha || '---'}</td>
+                    <td><b>${d.docente || d.maestro || '---'}</b></td>
+                    <td>${(d.materia || d.titulo || d.actividad || '').substring(0,40)}</td>
+                    <td><span class="badge" style="background:${color}">${tipo}</span></td>
+                    <td>${btn}</td>
+                </tr>`;
+            });
+        }, err => console.log("Error en " + nombreColeccion, err));
+    }
+
+    // LLAMADO A TODAS LAS POSIBILIDADES (Sin filtros para que no falle)
+    escucharColeccion("tareas_alumnos", "TAREA", "#27ae60");
+    escucharColeccion("material_docente", "TRABAJO", "#34495e");
+    escucharColeccion("planeaciones", "PLAN", "#f39c12");
+    escucharColeccion("asistencias", "LISTA", "#2980b9");
+
+    // Lógica de Avisos
     db.collection("avisos").onSnapshot(snap => {
         const div = document.getElementById("historial-avisos");
         div.innerHTML = "";
         snap.forEach(doc => {
             const a = doc.data();
-            div.innerHTML += <div><b>${a.titulo}</b>: ${a.mensaje}</div>;
+            div.innerHTML += <div style="padding:5px; border-bottom:1px solid #eee;"><b>${a.titulo}</b>: ${a.mensaje}</div>;
         });
     });
 
     async function publicarAviso() {
         const t = document.getElementById("titulo-aviso").value;
         const m = document.getElementById("texto-aviso").value;
-        if(!t || !m) return;
-        await db.collection("avisos").add({ titulo: t, mensaje: m, fecha: new Date().toLocaleString(), timestamp: new Date() });
-        document.getElementById("titulo-aviso").value = ""; document.getElementById("texto-aviso").value = "";
+        if(t && m) await db.collection("avisos").add({ titulo: t, mensaje: m, timestamp: new Date() });
     }
 
-    // 2. RECUPERAR TODO (Búsqueda por múltiples nombres de carpetas)
-    function cargarTodo() {
-        const tBody = document.getElementById("tabla-supervision");
-        tBody.innerHTML = "";
-
-        // Función para agregar filas dinámicamente
-        const add = (d, tipo, color) => {
-            const link = d.urlArchivo || d.archivo || d.link;
-            const btn = link ? <a href="${link}" target="_blank" class="btn-ver">Ver Trabajo</a> : "---";
-            tBody.innerHTML += `<tr>
-                <td>${d.fecha || '--'}</td>
-                <td><b>${d.docente || d.maestro || d.nombre || '---'}</b></td>
-                <td>${(d.materia || d.titulo || d.actividad || '').substring(0,50)}...</td>
-                <td><span class="badge" style="background:${color}">${tipo}</span></td>
-                <td>${btn}</td>
-            </tr>`;
-        };
-
-        // Buscamos en todas las colecciones posibles que podrías tener
-        db.collection("tareas_alumnos").onSnapshot(s => s.forEach(doc => add(doc.data(), "TAREA", "#27ae60")));
-        db.collection("material_docente").onSnapshot(s => s.forEach(doc => add(doc.data(), "TRABAJO", "#34495e")));
-        db.collection("planeaciones").onSnapshot(s => s.forEach(doc => add(doc.data(), "PLANEACIÓN", "#f39c12")));
-        db.collection("asistencias").onSnapshot(s => s.forEach(doc => add(doc.data(), "ASISTENCIA", "#2980b9")));
-        // Carpetas adicionales por si acaso
-        db.collection("tareas").onSnapshot(s => s.forEach(doc => add(doc.data(), "TAREA", "#27ae60")));
-        db.collection("planeacion").onSnapshot(s => s.forEach(doc => add(doc.data(), "PLANEACIÓN", "#f39c12")));
+    // Lógica de Pagos
+    async function registrarPago() {
+        const al = document.getElementById("pago-alumno").value;
+        const can = document.getElementById("pago-cantidad").value;
+        if(al && can) {
+            await db.collection("pagos").add({
+                alumno: al, concepto: document.getElementById("pago-concepto").value,
+                fecha: document.getElementById("pago-fecha").value,
+                cantidad: Number(can), timestamp: new Date()
+            });
+            alert("Pago guardado");
+        }
     }
 
-    //
+    db.collection("pagos").onSnapshot(snap => {
+        const t = document.getElementById("tabla-pagos");
+        t.innerHTML = "";
+        snap.forEach(doc => {
+            const p = doc.data();
+            t.innerHTML += <tr><td>${p.alumno}</td><td>${p.concepto}</td><td>${p.fecha}</td><td>$${p.cantidad}</td></tr>;
+        });
+    });
+</script>
+</body>
+</html>
