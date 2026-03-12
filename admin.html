@@ -2,61 +2,55 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Panel Administrativo - CECOVAM</title>
+    <title>CECOVAM - PANEL TOTAL</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <style>
-        :root { --azul: #1a2a6c; --dorado: #b8952d; --verde: #27ae60; --rojo: #b21f1f; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
-        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        :root { --azul: #1a2a6c; --verde: #27ae60; --rojo: #b21f1f; --dorado: #b8952d; }
+        body { font-family: sans-serif; background: #f0f2f5; padding: 20px; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
         h1, h2 { color: var(--azul); text-align: center; }
-        .status { text-align: center; font-weight: bold; padding: 10px; border-radius: 5px; margin-bottom: 15px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #e0e0e0; padding: 10px; text-align: left; font-size: 13px; }
+        #status { text-align: center; font-weight: bold; padding: 12px; border-radius: 6px; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 13px; }
         th { background: var(--azul); color: white; }
         .btn-ver { background: var(--verde); color: white; padding: 5px 10px; text-decoration: none; border-radius: 4px; font-weight: bold; }
-        .seccion-avisos { border-left: 5px solid var(--rojo); }
-        .seccion-pagos { border-top: 5px solid var(--dorado); }
     </style>
 </head>
 <body>
 
     <div class="card">
-        <h1>CECOVAM - RECUPERACIÓN DE SISTEMA</h1>
-        <div id="status" class="status" style="background: #fff3cd; color: #856404;">🔌 Conectando con la base de datos...</div>
+        <h1>SISTEMA ADMINISTRATIVO CECOVAM</h1>
+        <div id="status" style="background: #fff3cd; color: #856404;">🔄 Restableciendo conexión maestra...</div>
     </div>
 
-    <div class="card seccion-avisos">
-        <h2>📢 Tablón de Avisos Anteriores</h2>
-        <div id="lista-avisos" style="font-size: 14px; color: #333;">Cargando avisos...</div>
+    <div class="card" style="border-left: 6px solid var(--rojo);">
+        <h2>📢 Tablón de Avisos Recuperados</h2>
+        <div id="lista-avisos">Buscando avisos...</div>
     </div>
 
     <div class="card">
-        <h2>📂 Supervisión Docente y Archivos</h2>
+        <h2>📂 Supervisión de Docentes y Archivos</h2>
         <div style="overflow-x: auto;">
             <table>
                 <thead>
-                    <tr>
-                        <th>Fecha</th>
-                        <th>Docente</th>
-                        <th>Actividad / Materia</th>
-                        <th>Tipo</th>
-                        <th>Archivo</th>
-                    </tr>
+                    <tr><th>Fecha</th><th>Docente</th><th>Actividad</th><th>Tipo</th><th>Acción</th></tr>
                 </thead>
                 <tbody id="tabla-datos"></tbody>
             </table>
         </div>
     </div>
 
-    <div class="card seccion-pagos">
-        <h2>💰 Historial de Pagos Recuperado</h2>
-        <table>
-            <thead>
-                <tr><th>Alumno</th><th>Concepto</th><th>Fecha</th><th>Monto</th></tr>
-            </thead>
-            <tbody id="tabla-pagos"></tbody>
-        </table>
+    <div class="card" style="border-top: 6px solid var(--dorado);">
+        <h2>💰 Historial de Pagos</h2>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr><th>Alumno</th><th>Concepto</th><th>Fecha</th><th>Monto</th></tr>
+                </thead>
+                <tbody id="tabla-pagos"></tbody>
+            </table>
+        </div>
     </div>
 
 <script>
@@ -72,41 +66,51 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // 1. CARGAR SUPERVISIÓN (TAREAS, PLANES, ASISTENCIAS)
-    function cargarSupervision(coleccion, tipo, color) {
-        db.collection(coleccion).get().then(snap => {
-            const tabla = document.getElementById('tabla-datos');
-            document.getElementById('status').innerText = "✅ CONEXIÓN EXITOSA - RECUPERANDO DATOS";
-            document.getElementById('status').style.background = "#d4edda";
-            document.getElementById('status').style.color = "#155724";
+    function conectar() {
+        const st = document.getElementById('status');
+        st.innerText = "✅ SISTEMA RECUPERADO Y CONECTADO";
+        st.style.background = "#d4edda";
+        st.style.color = "#155724";
+    }
 
+    // CARGAR SUPERVISIÓN (TAREAS, PLANES, ETC)
+    const colecciones = [
+        {id: "tareas_alumnos", t: "TAREA", c: "#27ae60"},
+        {id: "material_docente", t: "TRABAJO", c: "#34495e"},
+        {id: "planeaciones", t: "PLAN", c: "#f39c12"},
+        {id: "asistencias", t: "LISTA", c: "#2980b9"}
+    ];
+
+    colecciones.forEach(col => {
+        db.collection(col.id).get().then(snap => {
+            conectar();
+            const tabla = document.getElementById('tabla-datos');
             snap.forEach(doc => {
                 const d = doc.data();
                 const link = d.urlArchivo || d.archivo || d.link || "";
-                const btn = link ? <a href="${link}" target="_blank" class="btn-ver">VER ARCHIVO</a> : "---";
-                
+                const btn = link ? <a href="${link}" target="_blank" class="btn-ver">VER</a> : "---";
                 tabla.innerHTML += `<tr>
                     <td>${d.fecha || '---'}</td>
                     <td><b>${d.docente || d.maestro || '---'}</b></td>
-                    <td>${d.materia || d.titulo || d.actividad || '---'}</td>
-                    <td style="color:${color}; font-weight:bold;">${tipo}</td>
+                    <td>${d.materia || d.actividad || '---'}</td>
+                    <td style="color:${col.c}; font-weight:bold;">${col.t}</td>
                     <td>${btn}</td>
                 </tr>`;
             });
         });
-    }
+    });
 
-    // 2. CARGAR AVISOS
+    // CARGAR AVISOS
     db.collection("avisos").get().then(snap => {
         const div = document.getElementById('lista-avisos');
         div.innerHTML = "";
         snap.forEach(doc => {
             const a = doc.data();
-            div.innerHTML += <p>📌 <b>${a.titulo}</b>: ${a.mensaje} <small>(${a.fecha || ''})</small></p>;
+            div.innerHTML += <p>📌 <b>${a.titulo}</b>: ${a.mensaje}</p>;
         });
     });
 
-    // 3. CARGAR PAGOS
+    // CARGAR PAGOS
     db.collection("pagos").get().then(snap => {
         const tPagos = document.getElementById('tabla-pagos');
         snap.forEach(doc => {
@@ -115,16 +119,10 @@
                 <td>${p.alumno || '---'}</td>
                 <td>${p.concepto || '---'}</td>
                 <td>${p.fecha || '---'}</td>
-                <td style="color:green; font-weight:bold;">$${p.cantidad || p.monto || '0'}</td>
+                <td style="color:green; font-weight:bold;">$${p.monto || p.cantidad || '0'}</td>
             </tr>`;
         });
     });
-
-    // Ejecutar carga total
-    cargarSupervision("tareas_alumnos", "TAREA", "#27ae60");
-    cargarSupervision("material_docente", "TRABAJO", "#34495e");
-    cargarSupervision("planeaciones", "PLAN", "#f39c12");
-    cargarSupervision("asistencias", "LISTA", "#2980b9");
 </script>
 </body>
 </html>
