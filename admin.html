@@ -7,20 +7,19 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <style>
-        :root { --azul: #1a2a6c; --dorado: #b8952d; --gris: #f4f7f6; --verde: #27ae60; }
+        :root { --azul: #1a2a6c; --dorado: #b8952d; --gris: #f4f7f6; --verde: #27ae60; --rojo: #b21f1f; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--gris); margin: 0; padding: 20px; }
         .container { max-width: 1100px; margin: auto; }
-        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        h1 { color: var(--azul); margin: 0; text-align: center; font-size: 20px; }
-        h2 { color: var(--azul); border-bottom: 2px solid var(--dorado); padding-bottom: 8px; margin-top: 0; font-size: 18px; }
-        .tabla-container { overflow-x: auto; margin-top: 10px; }
-        table { width: 100%; border-collapse: collapse; background: white; min-width: 600px; margin-bottom: 20px; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h1 { color: var(--azul); margin: 0; text-align: center; font-size: 18px; text-transform: uppercase; }
+        h2 { color: var(--azul); border-bottom: 2px solid var(--dorado); padding-bottom: 8px; margin-top: 0; font-size: 16px; }
+        .form-flex { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+        input, textarea { padding: 10px; border: 1px solid #ccc; border-radius: 6px; flex: 1; min-width: 150px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; color: white; }
+        table { width: 100%; border-collapse: collapse; background: white; min-width: 700px; }
         th, td { padding: 10px; text-align: left; border: 1px solid #eee; font-size: 13px; }
         th { background: var(--azul); color: white; }
-        .form-pagos { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 20px; }
-        input { padding: 10px; border: 1px solid #ccc; border-radius: 6px; }
-        .btn-pago { background: var(--azul); color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        .badge { padding: 3px 6px; border-radius: 4px; font-weight: bold; font-size: 10px; text-transform: uppercase; }
+        .badge { padding: 3px 6px; border-radius: 4px; font-weight: bold; font-size: 10px; color: white; }
     </style>
 </head>
 <body>
@@ -30,45 +29,44 @@
         <h1>(CECOVAM) CENTRO DE ESTUDIOS COMPUTACIONALES DEL VALLE DE MÉXICO</h1>
     </div>
 
+    <div class="card" style="border-left: 8px solid var(--rojo);">
+        <h2>📢 Avisos Generales</h2>
+        <div class="form-flex">
+            <input type="text" id="titulo-aviso" placeholder="Título del nuevo aviso">
+            <textarea id="texto-aviso" placeholder="Contenido del aviso..."></textarea>
+            <button class="btn" style="background: var(--rojo);" onclick="publicarAviso()">PUBLICAR</button>
+        </div>
+        <div id="contenedor-avisos-viejos" style="background: #fff5f5; padding: 10px; border-radius: 8px; font-size: 13px;">
+            <strong>Cargando avisos anteriores...</strong>
+        </div>
+    </div>
+
     <div class="card">
-        <h2>📂 Historial Completo de Docentes</h2>
-        <div class="tabla-container">
+        <h2>📂 Actividad de Docentes y Tareas</h2>
+        <div style="overflow-x: auto;">
             <table>
                 <thead>
-                    <tr>
-                        <th>Fecha</th>
-                        <th>Docente</th>
-                        <th>Materia/Archivo</th>
-                        <th>Tipo</th>
-                    </tr>
+                    <tr><th>Fecha</th><th>Docente</th><th>Detalle</th><th>Tipo</th><th>Acción</th></tr>
                 </thead>
-                <tbody id="cuerpo-tabla-docentes">
-                    <tr><td colspan="4">Buscando datos históricos...</td></tr>
-                </tbody>
+                <tbody id="cuerpo-tabla-docentes"></tbody>
             </table>
         </div>
     </div>
 
     <div class="card" style="border-top: 5px solid var(--dorado);">
         <h2>💰 Control de Pagos</h2>
-        <div class="form-pagos">
+        <div class="form-flex">
             <input type="text" id="pago-alumno" placeholder="Alumno">
             <input type="text" id="pago-concepto" placeholder="Concepto">
             <input type="text" id="pago-detalle" placeholder="Nivel/Semestre">
             <input type="date" id="pago-fecha">
-            <input type="number" id="pago-cantidad" placeholder="$ Cantidad">
-            <button class="btn-pago" onclick="registrarPago()">GUARDAR</button>
+            <input type="number" id="pago-cantidad" placeholder="$">
+            <button class="btn" style="background: var(--azul);" onclick="registrarPago()">GUARDAR PAGO</button>
         </div>
-        <div class="tabla-container">
+        <div style="overflow-x: auto;">
             <table>
                 <thead>
-                    <tr>
-                        <th>Alumno</th>
-                        <th>Concepto</th>
-                        <th>Detalle</th>
-                        <th>Fecha</th>
-                        <th>Monto</th>
-                    </tr>
+                    <tr><th>Alumno</th><th>Concepto</th><th>Nivel</th><th>Fecha</th><th>Monto</th></tr>
                 </thead>
                 <tbody id="cuerpo-tabla-pagos"></tbody>
             </table>
@@ -88,78 +86,55 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // RECUPERACIÓN DE DATOS HISTÓRICOS (PLANEACIONES, ARCHIVOS, ASISTENCIA)
-    function cargarTodoElHistorial() {
-        const tabla = document.getElementById("cuerpo-tabla-docentes");
-        tabla.innerHTML = ""; // Limpiar mensaje de carga
-
-        // 1. Buscar en 'material_docente' (Archivos subidos)
-        db.collection("material_docente").onSnapshot(snap => {
-            snap.forEach(doc => {
-                const d = doc.data();
-                agregarFila(d.fecha, d.docente, d.titulo || d.nombreArchivo, "ARCHIVO", "#e3f2fd", "#1565c0");
-            });
-        });
-
-        // 2. Buscar en 'planeaciones'
-        db.collection("planeaciones").onSnapshot(snap => {
-            snap.forEach(doc => {
-                const d = doc.data();
-                agregarFila(d.fecha, d.docente, d.materia + ": " + (d.contenido || d.actividad), "PLAN", "#fff3e0", "#e65100");
-            });
-        });
-
-        // 3. Buscar en 'asistencias'
-        db.collection("asistencias").onSnapshot(snap => {
-            snap.forEach(doc => {
-                const d = doc.data();
-                agregarFila(d.fecha, d.maestro || d.docente, "Pase de lista", "ASISTENCIA", "#e8f5e9", "#2e7d32");
-            });
-        });
-    }
-
-    function agregarFila(fecha, docente, info, tipo, bg, color) {
-        const tabla = document.getElementById("cuerpo-tabla-docentes");
-        const fila = `<tr>
-            <td>${fecha || '---'}</td>
-            <td><b>${docente || 'Anónimo'}</b></td>
-            <td>${info ? info.substring(0, 60) : 'Sin datos'}...</td>
-            <td><span class="badge" style="background:${bg}; color:${color};">${tipo}</span></td>
-        </tr>`;
-        tabla.innerHTML += fila;
-    }
-
-    // LÓGICA DE PAGOS
-    async function registrarPago() {
-        const al = document.getElementById("pago-alumno").value;
-        const con = document.getElementById("pago-concepto").value;
-        const det = document.getElementById("pago-detalle").value;
-        const fec = document.getElementById("pago-fecha").value;
-        const can = document.getElementById("pago-cantidad").value;
-
-        if(!al || !can) return alert("Llena los campos");
-
-        await db.collection("pagos").add({
-            alumno: al, concepto: con, detalle: det, fecha: fec, cantidad: Number(can), timestamp: new Date()
-        });
-        alert("Pago registrado");
-        document.getElementById("pago-alumno").value = "";
-        document.getElementById("pago-cantidad").value = "";
-    }
-
-    db.collection("pagos").orderBy("timestamp", "desc").onSnapshot(snap => {
-        const t = document.getElementById("cuerpo-tabla-pagos");
-        t.innerHTML = "";
+    // 1. CARGAR AVISOS (RECUPERA LOS QUE YA ESTABAN)
+    db.collection("avisos").orderBy("timestamp", "desc").onSnapshot(snap => {
+        const div = document.getElementById("contenedor-avisos-viejos");
+        div.innerHTML = "";
+        if(snap.empty) div.innerHTML = "No hay avisos publicados.";
         snap.forEach(doc => {
-            const p = doc.data();
-            t.innerHTML += `<tr>
-                <td>${p.alumno}</td><td>${p.concepto}</td><td>${p.detalle}</td><td>${p.fecha}</td>
-                <td style="color:green; font-weight:bold;">$${p.cantidad}</td>
-            </tr>`;
+            const a = doc.data();
+            div.innerHTML += `<div style="border-bottom: 1px solid #ddd; padding: 5px 0;">
+                <strong>${a.titulo}</strong>: ${a.mensaje} <br>
+                <small style="color: #888;">${a.fecha}</small>
+            </div>`;
         });
     });
 
-    cargarTodoElHistorial();
-</script>
-</body>
-</html>
+    async function publicarAviso() {
+        const tit = document.getElementById("titulo-aviso").value;
+        const msg = document.getElementById("texto-aviso").value;
+        if(!tit || !msg) return alert("Escribe el aviso");
+        await db.collection("avisos").add({
+            titulo: tit, mensaje: msg, fecha: new Date().toLocaleString(), timestamp: new Date()
+        });
+        document.getElementById("titulo-aviso").value = "";
+        document.getElementById("texto-aviso").value = "";
+    }
+
+    // 2. CARGAR SUPERVISIÓN (TAREAS, PLANES, LISTAS)
+    function cargarSupervision() {
+        const t = document.getElementById("cuerpo-tabla-docentes");
+        t.innerHTML = "";
+        db.collection("tareas_alumnos").onSnapshot(snap => {
+            snap.forEach(doc => { const d = doc.data(); addRow(d.fecha, d.docente, d.titulo, "TAREA", "#27ae60", d.urlArchivo); });
+        });
+        db.collection("planeaciones").onSnapshot(snap => {
+            snap.forEach(doc => { const d = doc.data(); addRow(d.fecha, d.docente, d.materia + ": " + d.contenido, "PLAN", "#f39c12", null); });
+        });
+        db.collection("asistencias").onSnapshot(snap => {
+            snap.forEach(doc => { const d = doc.data(); addRow(d.fecha, d.maestro || d.docente, "Pase de lista", "LISTA", "#2980b9", null); });
+        });
+    }
+
+    function addRow(f, d, i, tipo, c, l) {
+        const btn = l ? <a href="${l}" target="_blank" style="color:green; font-weight:bold; text-decoration:none;">Ver Archivo</a> : "---";
+        document.getElementById("cuerpo-tabla-docentes").innerHTML += `<tr>
+            <td>${f || '--'}</td><td><b>${d}</b></td><td>${i ? i.substring(0,40) : ''}...</td>
+            <td><span class="badge" style="background:${c}">${tipo}</span></td><td>${btn}</td>
+        </tr>`;
+    }
+
+    // 3. CARGAR PAGOS
+    async function registrarPago() {
+        const al = document.getElementById("pago-alumno").value;
+        const can = document.getElementById("pago-cantidad").value;
