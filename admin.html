@@ -1,135 +1,85 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Administración CECOVAM</title>
+    <title>Panel Administrativo</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <style>
-        :root { --azul: #1a2a6c; --dorado: #b8952d; --rojo: #b21f1f; --verde: #27ae60; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
-        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        h1, h2 { color: var(--azul); margin-top: 0; text-align: center; }
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 15px; }
-        input, textarea { padding: 10px; border: 1px solid #ddd; border-radius: 5px; width: 100%; box-sizing: border-box; }
-        button { padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
-        th, td { border: 1px solid #eee; padding: 10px; text-align: left; }
-        th { background: var(--azul); color: white; }
-        .badge { padding: 3px 6px; border-radius: 4px; color: white; font-size: 10px; font-weight: bold; }
+        body { font-family: sans-serif; background: #f0f2f5; padding: 20px; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h1 { color: #1a2a6c; text-align: center; }
+        table { width: 100%; border-collapse: collapse; background: white; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; font-size: 13px; }
+        th { background: #1a2a6c; color: white; }
+        .btn-ver { background: #27ae60; color: white; padding: 5px 10px; text-decoration: none; border-radius: 4px; font-weight: bold; }
+        #conexion { text-align: center; font-weight: bold; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
     </style>
 </head>
 <body>
 
     <div class="card">
-        <h1>CECOVAM - CONTROL TOTAL</h1>
-        <div id="status" style="text-align:center; font-weight:bold; color:orange;">Estado: Conectando...</div>
-    </div>
-
-    <div class="card" style="border-left: 5px solid var(--rojo);">
-        <h2>📢 Publicar Aviso</h2>
-        <div class="form-grid">
-            <input type="text" id="av-tit" placeholder="Título">
-            <input type="text" id="av-msg" placeholder="Mensaje">
-            <button style="background: var(--rojo);" onclick="subirAviso()">PUBLICAR</button>
-        </div>
-        <div id="lista-avisos"></div>
+        <h1>CECOVAM - PANEL DE CONTROL</h1>
+        <div id="conexion" style="background: #fff3cd; color: #856404;">🔌 Intentando establecer conexión directa...</div>
     </div>
 
     <div class="card">
-        <h2>📂 Supervisión de Docentes y Tareas</h2>
-        <div style="overflow-x:auto;">
-            <table>
-                <thead>
-                    <tr><th>Fecha</th><th>Docente</th><th>Actividad</th><th>Tipo</th><th>Acción</th></tr>
-                </thead>
-                <tbody id="tabla-datos"></tbody>
-            </table>
-        </div>
+        <h2>📂 Registro de Actividades (Tareas y Planeaciones)</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Docente</th>
+                    <th>Materia / Actividad</th>
+                    <th>Tipo</th>
+                    <th>Archivo</th>
+                </tr>
+            </thead>
+            <tbody id="tabla-datos"></tbody>
+        </table>
     </div>
 
-    <div class="card" style="border-top: 5px solid var(--dorado);">
-        <h2>💰 Control de Pagos</h2>
-        <div class="form-grid">
-            <input type="text" id="pg-al" placeholder="Alumno">
-            <input type="number" id="pg-ct" placeholder="Monto $">
-            <button style="background: var(--azul);" onclick="subirPago()">GUARDAR</button>
-        </div>
-        <div id="lista-pagos"></div>
-    </div>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDJh57e-sBDK0_8VtFn4EwFOyDDsm8v0lc",
+            authDomain: "plataforma-cecovam.firebaseapp.com",
+            projectId: "plataforma-cecovam",
+            storageBucket: "plataforma-cecovam.firebasestorage.app",
+            messagingSenderId: "655865798428",
+            appId: "1:655865798428:web:625f020d553385e43d24d9"
+        };
 
-<script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyDJh57e-sBDK0_8VtFn4EwFOyDDsm8v0lc",
-        authDomain: "plataforma-cecovam.firebaseapp.com",
-        projectId: "plataforma-cecovam",
-        storageBucket: "plataforma-cecovam.firebasestorage.app",
-        messagingSenderId: "655865798428",
-        appId: "1:655865798428:web:625f020d553385e43d24d9"
-    };
+        // Iniciar Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+        // Confirmar conexión
+        document.getElementById('conexion').innerText = "✅ CONEXIÓN EXITOSA - BUSCANDO DATOS...";
+        document.getElementById('conexion').style.background = "#d4edda";
+        document.getElementById('conexion').style.color = "#155724";
 
-    // Verificación de conexión
-    document.getElementById('status').innerText = "✅ Conectado a la Base de Datos";
-    document.getElementById('status').style.color = "green";
+        function agregarFila(doc, tipo, color) {
+            const data = doc.data();
+            const tabla = document.getElementById('tabla-datos');
+            const url = data.urlArchivo || data.archivo || data.link || "";
+            const boton = url ? <a href="${url}" target="_blank" class="btn-ver">ABRIR</a> : "---";
 
-    // Función para pintar filas
-    function pintar(d, tipo, color) {
-        const t = document.getElementById('tabla-datos');
-        const link = d.urlArchivo || d.archivo || d.link || "";
-        const btn = link ? <a href="${link}" target="_blank" style="color:green; font-weight:bold;">VER TAREA</a> : "---";
-        
-        t.innerHTML += `<tr>
-            <td>${d.fecha || '---'}</td>
-            <td><b>${d.docente || d.maestro || '---'}</b></td>
-            <td>${d.materia || d.titulo || d.contenido || '---'}</td>
-            <td><span class="badge" style="background:${color}">${tipo}</span></td>
-            <td>${btn}</td>
-        </tr>`;
-    }
+            const fila = tabla.insertRow();
+            fila.innerHTML = `
+                <td>${data.fecha || '---'}</td>
+                <td><b>${data.docente || data.maestro || '---'}</b></td>
+                <td>${data.materia || data.titulo || data.contenido || '---'}</td>
+                <td style="color:${color}; font-weight:bold;">${tipo}</td>
+                <td>${boton}</td>
+            `;
+        }
 
-    // CARGAR TODO (Busca en TODAS las carpetas posibles)
-    const colecciones = [
-        {nom: "tareas_alumnos", lab: "TAREA", col: "#27ae60"},
-        {nom: "material_docente", lab: "TRABAJO", col: "#34495e"},
-        {nom: "planeaciones", lab: "PLAN", col: "#f39c12"},
-        {nom: "asistencias", lab: "LISTA", col: "#2980b9"}
-    ];
+        // Cargar todas las colecciones una por una
+        db.collection("tareas_alumnos").get().then(snap => snap.forEach(doc => agregarFila(doc, "TAREA", "#27ae60")));
+        db.collection("material_docente").get().then(snap => snap.forEach(doc => agregarFila(doc, "TRABAJO", "#34495e")));
+        db.collection("planeaciones").get().then(snap => snap.forEach(doc => agregarFila(doc, "PLAN", "#f39c12")));
+        db.collection("asistencias").get().then(snap => snap.forEach(doc => agregarFila(doc, "LISTA", "#2980b9")));
 
-    colecciones.forEach(c => {
-        db.collection(c.nom).onSnapshot(s => {
-            s.forEach(doc => pintar(doc.data(), c.lab, c.col));
-        }, err => console.log("Error en " + c.nom, err));
-    });
-
-    // Lógica Avisos
-    db.collection("avisos").onSnapshot(s => {
-        const div = document.getElementById('lista-avisos');
-        div.innerHTML = "";
-        s.forEach(doc => {
-            const a = doc.data();
-            div.innerHTML += <p>• <b>${a.titulo}</b>: ${a.mensaje}</p>;
-        });
-    });
-
-    function subirAviso() {
-        const t = document.getElementById('av-tit').value;
-        const m = document.getElementById('av-msg').value;
-        if(t && m) db.collection("avisos").add({ titulo: t, mensaje: m, timestamp: new Date() });
-    }
-
-    // Lógica Pagos
-    function subirPago() {
-        const al = document.getElementById('pg-al').value;
-        const ct = document.getElementById('pg-ct').value;
-        if(al && ct) db.collection("pagos").add({ alumno: al, cantidad: ct, timestamp: new Date() });
-    }
-</script>
+    </script>
 </body>
 </html>
-
-
-
